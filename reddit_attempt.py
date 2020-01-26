@@ -7,7 +7,9 @@ import ctypes
 from PIL import Image
 import datetime
 
-env_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+base_directory = os.path.dirname(os.path.abspath(__file__))
+
+env_file_path = os.path.join(base_directory, ".env")
 print(env_file_path)
 load_dotenv(env_file_path)
 
@@ -25,7 +27,7 @@ def get_submissions_for_subreddit(reddit_obj, subreddit_name, time_filter="day",
         '''
         # parse
         if sub.url != '' and (sub.over_18 == nsfw_allowed):
-            image_urls.append(sub.url)
+            image_urls.append((sub.url, sub.permalink))
     return image_urls
 
 
@@ -92,7 +94,7 @@ reddit = praw.Reddit(client_id='gSozMpmngIW2Lg',
                      client_secret=os.environ["SECRET"],
                      user_agent='Windows:SubredditBackground:v0.0.0 (by u/shoot2thr1ll284)')
 
-config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.ini")
+config_file_path = os.path.join(base_directory, "config.ini")
 config = configparser.ConfigParser()
 config.read(config_file_path)
 general = config["GENERAL"]
@@ -106,17 +108,21 @@ print(len(urls), "results")
 # get suitable image for desktop background
 file_path = ""
 found_good = False
-dest_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "PictureSource")
+dest_directory = os.path.join(base_directory, "PictureSource")
 while (not found_good) and len(urls) != 0:
 
     # select specific url at random
     attempt, urls = get_random_url(urls)
+    image_url, post_permalink = attempt
     print(attempt)
 
     # save first attempt at okay file url
-    file_path = get_file_from_url(dest_directory, "temp", attempt)
+    file_path = get_file_from_url(dest_directory, "temp", image_url)
     if file_path != "":
         found_good = True
+        with open(os.path.join(dest_directory, "tempStat.txt"), "w") as f:
+            f.write(image_url + "\n")
+            f.write(post_permalink)
         print("good aspect")
 
 # set file to desktop background
@@ -156,26 +162,30 @@ def remove_all_background_photos():
 
 
 run_weekly = should_run_weekly()
-dest_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "PictureSource", "LockScreen")
+dest_directory = os.path.join(base_directory, "PictureSource", "LockScreen")
 iteration = 0
 if run_weekly:
     # remove previous images from folder
     remove_all_background_photos()
 
-    # get suitable images for background
-    weekly_list = get_submissions_for_subreddit(reddit, subreddits, "week", nsfw_allowed)
-    while len(weekly_list) > 0:
-        # select specific url at random
-        attempt, urls = get_random_url(weekly_list)
+    with open(os.path.join(base_directory,"PictureSource", "lockScreenStat.txt"), "w") as f:
 
-        # get image and save if able
-        file_path = get_file_from_url(dest_directory, "image" + str(iteration), attempt, check_correct_aspect=False)
-        if file_path != "":
-            iteration += 1
+        # get suitable images for background
+        weekly_list = get_submissions_for_subreddit(reddit, subreddits, "week", nsfw_allowed)
+        while len(weekly_list) > 0:
+            # select specific url at random
+            attempt, urls = get_random_url(weekly_list)
+            image_url, post_permalink = attempt
 
-        print("URLS Left: " + str(len(weekly_list)))
+            # get image and save if able
+            file_path = get_file_from_url(dest_directory, "image" + str(iteration), image_url, check_correct_aspect=False)
+            if file_path != "":
+                iteration += 1
+                f.write(file_path + "  |||||  " + post_permalink + "\n")
 
-    set_weekly_run_file()
+            print("URLS Left: " + str(len(weekly_list)))
+
+        set_weekly_run_file()
 
 else:
     print("Weekly not Run")
