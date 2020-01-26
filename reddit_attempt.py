@@ -7,7 +7,9 @@ import ctypes
 from PIL import Image
 import datetime
 
-load_dotenv('.env')
+env_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+print(env_file_path)
+load_dotenv(env_file_path)
 
 def get_submissions_for_subreddit(reddit_obj, subreddit_name, time_filter="day", nsfw_allowed=False):
     submissions = reddit_obj.subreddit(subreddit_name).top(time_filter)
@@ -90,14 +92,15 @@ reddit = praw.Reddit(client_id='gSozMpmngIW2Lg',
                      client_secret=os.environ["SECRET"],
                      user_agent='Windows:SubredditBackground:v0.0.0 (by u/shoot2thr1ll284)')
 
+config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.ini")
 config = configparser.ConfigParser()
-config.read("config.ini")
+config.read(config_file_path)
 general = config["GENERAL"]
 nsfw_allowed = general.getboolean("NSFW_ALLOWED")
 subreddits = general["SUBREDDITS"]
 
 # get all urls
-urls = [] # get_submissions_for_subreddit(reddit, subreddits, "day", nsfw_allowed)
+urls = get_submissions_for_subreddit(reddit, subreddits, "day", nsfw_allowed)
 print(len(urls), "results")
 
 # get suitable image for desktop background
