@@ -5,6 +5,7 @@ import random
 import requests
 import ctypes
 from PIL import Image
+import datetime
 
 load_dotenv('.env')
 
@@ -21,7 +22,7 @@ def get_submissions_for_subreddit(reddit_obj, subreddit_name, time_filter="day",
         print(sub.url)
         '''
         # parse
-        if sub.url != '':
+        if sub.url != '' and (sub.over_18 == nsfw_allowed):
             image_urls.append(sub.url)
     return image_urls
 
@@ -38,34 +39,40 @@ def get_random_url(url_list):
     return url, url_list
 
 
-def get_file_from_url(file_url):
+def get_file_from_url(dest_directory, dest_file_name,  file_url, check_correct_aspect=True):
     valid_extensions = ["png", "jpg"]
+    ext = file_url.split(".")[-1]
+    if ext not in valid_extensions:
+        return ""
     response = requests.get(file_url)
     response.raise_for_status()
 
     content = response.content
-    ext = file_url.split(".")[-1]
-    if ext not in valid_extensions:
-        return ""
-    file_name = "temp." + ext
-    file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "PictureSource", file_name)
 
+    file_name = dest_file_name + "." + ext
+    file_path = os.path.join(dest_directory, file_name)
+
+    print("File Saved at " + file_path)
     with open(file_path, "wb") as f:
         f.write(content)
 
     is_correct_aspect = image_correct_aspect(file_path)
-    if is_correct_aspect:
-        return file_path
+    if check_correct_aspect:
+        if is_correct_aspect:
+            return file_path
+        else:
+            os.remove(file_path)
+            return ""
     else:
-        return ""
+        return file_path
 
 
-def image_correct_aspect(file_path):
+def image_correct_aspect(image_file_path):
     # get screen size to resize to
     # user32 = ctypes.windll.user32
     # screensize = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
 
-    image = Image.open(file_path)
+    image = Image.open(image_file_path)
     image_size = image.size
     if image_size[0] >= image_size[1]:
         return True
@@ -90,11 +97,13 @@ nsfw_allowed = general.getboolean("NSFW_ALLOWED")
 subreddits = general["SUBREDDITS"]
 
 # get all urls
-urls = get_submissions_for_subreddit(reddit, subreddits, "day", nsfw_allowed)
-print(urls)
+urls = [] # get_submissions_for_subreddit(reddit, subreddits, "day", nsfw_allowed)
+print(len(urls), "results")
 
+# get suitable image for desktop background
 file_path = ""
 found_good = False
+dest_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "PictureSource")
 while (not found_good) and len(urls) != 0:
 
     # select specific url at random
@@ -102,17 +111,69 @@ while (not found_good) and len(urls) != 0:
     print(attempt)
 
     # save first attempt at okay file url
-    file_path = get_file_from_url(attempt)
-    print(file_path)
+    file_path = get_file_from_url(dest_directory, "temp", attempt)
     if file_path != "":
         found_good = True
-        print("good")
+        print("good aspect")
 
 # set file to desktop background
 if file_path != "":
     set_file_to_desktop_background(file_path)
+else:
+    print("Found No Good Aspect Images")
+
+def should_run_weekly():
+    file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "PictureSource", "lastran.txt")
+    if os.path.exists(file_path):
+        # check file to see last time it was run
+        with open(file_path, "r") as f:
+            time_str = f.readline().replace("\n", "")
+            time_obj = datetime.datetime.strptime(time_str, "%Y-%m-%d")
+            diff = datetime.datetime.now() - time_obj
+            if diff.days >= 7:
+                return True
+
+    return False
 
 
 
-# https://www.reddit.com/r/learnpython/comments/3vwhvg/changing_wallpaper_on_windows/
-# https://stackoverflow.com/questions/3129322/how-do-i-get-monitor-resolution-in-python
+def set_weekly_run_file():
+    file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "PictureSource", "lastran.txt")
+    with open(file_path, "w") as f:
+
+        time_str = datetime.datetime.now().strftime("%Y-%m-%d")
+        f.write(time_str)
+
+def remove_all_background_photos():
+    directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "PictureSource", "LockScreen")
+    prev = os.listdir(directory)
+    for f in prev:
+        full = os.path.join(directory, f)
+        os.remove(full)
+
+
+run_weekly = should_run_weekly()
+dest_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "PictureSource", "LockScreen")
+iteration = 0
+if run_weekly:
+    # remove previous images from folder
+    remove_all_background_photos()
+
+    # get suitable images for background
+    weekly_list = get_submissions_for_subreddit(reddit, subreddits, "week", nsfw_allowed)
+    while len(weekly_list) > 0:
+        # select specific url at random
+        attempt, urls = get_random_url(weekly_list)
+
+        # get image and save if able
+        file_path = get_file_from_url(dest_directory, "image" + str(iteration), attempt, check_correct_aspect=False)
+        if file_path != "":
+            iteration += 1
+
+        print("URLS Left: " + str(len(weekly_list)))
+
+    set_weekly_run_file()
+
+else:
+    print("Weekly not Run")
+
