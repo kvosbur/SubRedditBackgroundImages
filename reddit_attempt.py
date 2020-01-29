@@ -175,17 +175,20 @@ if __name__ == "__main__":
                 f.write(post_permalink)
             print("good aspect")
         else:
-            incorrect_aspect.append(list(attempt) + list(image_size))
+            temp = list(attempt)
+            temp.append(image_size)
+            incorrect_aspect.append(temp)
 
     # set file to desktop background
     if file_path != "":
         shutil.move(file_path, final_path)
         set_file_to_desktop_background(final_path)
+        print_list(incorrect_aspect)
     else:
         # try to combine dailies to create a better bigger image
         print_list(incorrect_aspect)
         print("SEPARATOR")
-        print_list(sorted(incorrect_aspect, key=lambda x: x[-1]))
+        print_list()
         print("Found No Good Aspect Images")
 
 

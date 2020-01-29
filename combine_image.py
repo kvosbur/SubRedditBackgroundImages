@@ -7,9 +7,14 @@ WIDTH = 0
 
 urls = ['https://i.redd.it/d3rcv2shyid41.png',
         'https://i.redd.it/50bw2q84bgd41.jpg',
-        'https://i.redd.it/3sf6lkuvwid41.png',
-        'https://i.redd.it/ocycpx6j5gd41.jpg']
+        'https://i.redd.it/3sf6lkuvwid41.png' ]
 
+
+# have a gradient in between the photos using the edge pixel average to decide the two sides of the gradient.
+# colorama is a possible library to use for color analysis
+
+
+# another idea is to always add a kind of picture frame around all photos that are combined
 
 def get_size_data(single_image_data, index):
     return single_image_data[2][index]
@@ -29,7 +34,7 @@ def get_total_size(image_data, size_type):
 
 
 def get_current_aspect_ratio(image_data):
-    return get_total_size(image_data, WIDTH) / get_total_size(image_data, HEIGHT)
+    return get_total_size(image_data, WIDTH) / get_max_size(image_data, HEIGHT)
 
 
 def combine_images(image_data, final_image_path):
@@ -37,12 +42,10 @@ def combine_images(image_data, final_image_path):
     if get_current_aspect_ratio(image_data) > get_screen_aspect_ratio():
         # need to add more height to the image
         image_width = get_total_size(image_data, WIDTH)
-        max_height = get_max_size(image_data, HEIGHT)
-        image_height = int(image_width * get_screen_aspect_ratio())
-        print("add height")
+        image_height = int(image_width // get_screen_aspect_ratio())
     else:
         # need to add more width to the image
-        print("add width")
+
         image_height = get_max_size(image_data, HEIGHT)
         combined_width = get_total_size(image_data, WIDTH)
         image_width = int(image_height * get_screen_aspect_ratio())
@@ -56,14 +59,31 @@ def combine_images(image_data, final_image_path):
     for pic in info:
         n = Image.open(pic[0])
         height_factor = (image_height - get_size_data(pic, HEIGHT)) // 2
-        print("height_fac", height_factor)
         temp.paste(n, (beg_x, height_factor))
         beg_x += get_size_data(pic, WIDTH) + width_diff
-        print(beg_x)
 
     print("Save Resulting Image")
     temp.save(final_image_path, format="PNG")
     print("Combined Image Saved")
+
+
+target_aspect = get_screen_aspect_ratio()
+
+
+def get_good_aspect(image_data, width, maxHeight, startIndex, prevBestAspect):
+    # iterate through all image_data to find best aspect
+    if ()
+    for index in range(startIndex, len(image_data)):
+        current_image = image_data[index]
+        nextWidth = width + get_size_data(current_image, WIDTH)
+        nextHeight = max(maxHeight, get_size_data(current_image, HEIGHT))
+        new_aspect = nextWidth / nextHeight
+        if new_aspect < target_aspect:
+            get_good_aspect(image_data, nextWidth,nextHeight , index + 1, prevBestAspect)
+
+
+def find_images_to_combine(image_data):
+    ids = sorted(image_data, reverse=True, key=lambda x: x[-1][1])
 
 if __name__ == "__main__":
 
