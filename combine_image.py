@@ -56,7 +56,7 @@ def combine_images(image_data, final_image_path):
 
     print("Start Image Combining Process")
     beg_x = 0
-    for pic in info:
+    for pic in image_data:
         n = Image.open(pic[0])
         height_factor = (image_height - get_size_data(pic, HEIGHT)) // 2
         temp.paste(n, (beg_x, height_factor))
@@ -69,34 +69,88 @@ def combine_images(image_data, final_image_path):
 
 target_aspect = get_screen_aspect_ratio()
 
+def closer_to_target(first, second):
+    firstDiff = abs(first - target_aspect)
+    secondDiff = abs(second - target_aspect)
+    return firstDiff < secondDiff
 
-def get_good_aspect(image_data, width, maxHeight, startIndex, prevBestAspect):
+
+def get_good_aspect(image_data, width, maxHeight, startIndex):
     # iterate through all image_data to find best aspect
-    if ()
+    bestAspect = width / maxHeight
+    bestArr = []
+
     for index in range(startIndex, len(image_data)):
         current_image = image_data[index]
         nextWidth = width + get_size_data(current_image, WIDTH)
         nextHeight = max(maxHeight, get_size_data(current_image, HEIGHT))
         new_aspect = nextWidth / nextHeight
-        if new_aspect < target_aspect:
-            get_good_aspect(image_data, nextWidth,nextHeight , index + 1, prevBestAspect)
+        if closer_to_target(new_aspect, bestAspect):
+            bestAspect = new_aspect
+            bestArr = [index]
+        if new_aspect <= target_aspect and index + 1 < len(image_data):
+            bestFound = get_good_aspect(image_data, nextWidth, nextHeight, index + 1)
+            if closer_to_target(bestFound[1], bestAspect):
+                bestAspect = bestFound[1]
+                bestArr = bestFound[0] + [index]
+
+    return [bestArr, bestAspect]
 
 
 def find_images_to_combine(image_data):
     ids = sorted(image_data, reverse=True, key=lambda x: x[-1][1])
+    height = get_size_data(ids[0], HEIGHT)
+    bestSolution = [[], 0]
+    beginIndex = 0
+    index = 1
+    while index < len(ids):
+        nextHeight = get_size_data(ids[index], HEIGHT)
+        if nextHeight < (height * 0.8):
+            print("start", beginIndex, " end:", index)
+            solution = get_good_aspect(ids[beginIndex:index], 0, 1, 0)
+            if closer_to_target(solution[1], bestSolution[1]):
+                bestSolution = solution
+            print(solution)
+            beginIndex = index
+            height = nextHeight
+        index+= 1
+
+    if index - 1 != beginIndex:
+        sol = get_good_aspect(ids[beginIndex:index], 0, 1, 0)
+        if closer_to_target(solution[1], bestSolution[1]):
+            bestSolution = solution
+        print(sol)
+
+    return bestSolution
+
+
+def substitute_data(chosen_indices, image_data, dest_directory):
+    final_data = []
+    for index in chosen_indices:
+        final_data.append(get_file_from_url(dest_directory, "image" + str(index), image_data[index][0], check_correct_aspect=False))
+    return final_data
+
+
+def do_combine_landscape_process(image_data):
+    dest_directory = os.path.join(base_directory, "PictureSource")
+    final = os.path.join(dest_directory, "final.png")
+
+    chosen_images, image_aspect = find_images_to_combine(image_data)
+    final_data = substitute_data(chosen_images, image_data, dest_directory)
+    combine_images(final_data, final)
+
 
 if __name__ == "__main__":
 
-    dest_directory = os.path.join(base_directory, "PictureSource")
-    info = []
-    i = 0
-    for url in urls:
-        info.append(get_file_from_url(dest_directory, "image" + str(i), url, check_correct_aspect=False))
-        i+= 1
 
-    print(info)
-    final = os.path.join(dest_directory, "final.png")
+    # test data
+    a = [['https://i.redd.it/ew47fvqvrqd41.png', '/r/Animewallpaper/comments/evp08d/megumin_konosuba_2250x4000/', (2250, 4000)],
+        ['https://i.redd.it/73k8un5iiqd41.png', '/r/Animewallpaper/comments/evo6oj/gudas_ritsuka_and_mashu_fategrand_order2250x4000/', (2250, 4000)],
+        ['https://i.redd.it/e4bptn0tumd41.jpg', '/r/Animewallpaper/comments/evgp0u/kurumi_tokisawadate_a_live_2250x4000/', (2250, 4000)],
+        ['https://i.redd.it/mnab4a3gbqd41.png', '/r/Animewallpaper/comments/evnonz/marnie_and_gloria_pokémon_sword_shield_2250x4000/', (2250, 4000)],
+        ['https://i.redd.it/jd8g5coqqmd41.jpg', '/r/Animewallpaper/comments/evgeeq/pop_style_bunny_girloriginal_2250x4000/', (4250, 4000)],
+        ['https://i.redd.it/xs3ts5c46od41.png', '/r/Animewallpaper/comments/evjmnb/sunset_original_1262x2246/', (1262, 2246)],
+        ['https://i.redd.it/u3xj8s52tmd41.jpg', '/r/Animewallpaper/comments/evgkmc/chika_fujiwarakaguyasama_love_is_war_2250x4000/', (2250, 4000)]]
 
-    combine_images(info, final)
-
+    do_combine_landscape_process(a)
 
