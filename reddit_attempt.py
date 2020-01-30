@@ -13,8 +13,10 @@ print(env_file_path)
 load_dotenv(env_file_path)
 
 def print_list(l):
+    print("[")
     for item in l:
-        print(item)
+        print(item, ",")
+    print("]")
 
 def get_submissions_for_subreddit(reddit_obj, subreddit_name, time_filter="day", nsfw_allowed=False):
     submissions = reddit_obj.subreddit(subreddit_name).top(time_filter)
@@ -124,7 +126,7 @@ if __name__ == "__main__":
             temp.append(image_size)
             incorrect_aspect.append(temp)
 
-    toBeOrNotToBe = random.randint(0,1)
+    toBeOrNotToBe = random.randint(0, 1)
     # set file to desktop background
     if file_path != "" and toBeOrNotToBe:
         shutil.move(file_path, final_path)

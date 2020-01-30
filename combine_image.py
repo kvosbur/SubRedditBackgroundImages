@@ -12,7 +12,6 @@ urls = ['https://i.redd.it/d3rcv2shyid41.png',
 
 # have a gradient in between the photos using the edge pixel average to decide the two sides of the gradient.
 # will have to do gradient calculations manually though I can use ImageDraw from pil to help the process go nicer
-# colorama is a possible library to use for color analysis
 
 
 # another idea is to always add a kind of picture frame around all photos that are combined
@@ -131,8 +130,22 @@ def find_images_to_combine(image_data):
 def substitute_data(chosen_indices, image_data, dest_directory):
     final_data = []
     for index in chosen_indices:
-        final_data.append(get_file_from_url(dest_directory, "image" + str(index), image_data[index][0], check_correct_aspect=False))
+        temp = get_file_from_url(dest_directory, "image" + str(index), image_data[index][0], check_correct_aspect=False)
+        temp = list(temp)
+        temp[1] = image_data[index][0]
+        final_data.append(temp)
     return final_data
+
+
+def remove_image_files(image_data):
+    for pic in image_data:
+        os.remove(pic[0])
+
+
+def write_image_statistics(image_data, file_path):
+    with open(file_path, "w") as f:
+        for pic in image_data:
+            f.write(pic[1] + "\n")
 
 
 def do_combine_landscape_process(image_data):
@@ -142,6 +155,10 @@ def do_combine_landscape_process(image_data):
     chosen_images, image_aspect = find_images_to_combine(image_data)
     final_data = substitute_data(chosen_images, image_data, dest_directory)
     combine_images(final_data, final)
+    remove_image_files(final_data)
+
+    stat_file_path = os.path.join(dest_directory, "tempStat.txt")
+    write_image_statistics(final_data, stat_file_path)
 
 
 if __name__ == "__main__":
