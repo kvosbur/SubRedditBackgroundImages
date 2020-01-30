@@ -11,10 +11,16 @@ urls = ['https://i.redd.it/d3rcv2shyid41.png',
 
 
 # have a gradient in between the photos using the edge pixel average to decide the two sides of the gradient.
+# will have to do gradient calculations manually though I can use ImageDraw from pil to help the process go nicer
 # colorama is a possible library to use for color analysis
 
 
 # another idea is to always add a kind of picture frame around all photos that are combined
+# do clean up image files that are the source for the combined image.
+# have program return a non-zero error code when failure occurs (only do this when shitty internet)
+# add logging of program so that it logs its output/ errors
+# if error occurs have default image to set as desktop background (or take from weekly in this case)
+# idea to possibly combine the weekly portrait photos together into landscape photos since not all are being used right now.
 
 def get_size_data(single_image_data, index):
     return single_image_data[2][index]
@@ -106,14 +112,12 @@ def find_images_to_combine(image_data):
     while index < len(ids):
         nextHeight = get_size_data(ids[index], HEIGHT)
         if nextHeight < (height * 0.8):
-            print("start", beginIndex, " end:", index)
             solution = get_good_aspect(ids[beginIndex:index], 0, 1, 0)
             if closer_to_target(solution[1], bestSolution[1]):
                 bestSolution = solution
-            print(solution)
             beginIndex = index
             height = nextHeight
-        index+= 1
+        index += 1
 
     if index - 1 != beginIndex:
         sol = get_good_aspect(ids[beginIndex:index], 0, 1, 0)

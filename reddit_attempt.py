@@ -7,6 +7,7 @@ import ctypes
 from PIL import Image
 import datetime
 import shutil
+from combine_image import do_combine_landscape_process
 
 base_directory = os.path.dirname(os.path.abspath(__file__))
 
@@ -186,9 +187,7 @@ if __name__ == "__main__":
         print_list(incorrect_aspect)
     else:
         # try to combine dailies to create a better bigger image
-        print_list(incorrect_aspect)
-        print("SEPARATOR")
-        print_list()
+        do_combine_landscape_process(incorrect_aspect)
         print("Found No Good Aspect Images")
 
 
