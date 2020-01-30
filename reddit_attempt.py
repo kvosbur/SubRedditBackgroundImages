@@ -124,8 +124,9 @@ if __name__ == "__main__":
             temp.append(image_size)
             incorrect_aspect.append(temp)
 
+    toBeOrNotToBe = random.randint(0,1)
     # set file to desktop background
-    if file_path != "":
+    if file_path != "" and toBeOrNotToBe:
         shutil.move(file_path, final_path)
         set_file_to_desktop_background(final_path)
         print_list(incorrect_aspect)
