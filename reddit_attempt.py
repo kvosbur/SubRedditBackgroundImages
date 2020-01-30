@@ -2,14 +2,11 @@ import praw, os
 from dotenv import load_dotenv
 import configparser
 import random
-import requests
 import ctypes
-from PIL import Image
 import datetime
 import shutil
 from combine_image import do_combine_landscape_process
-
-base_directory = os.path.dirname(os.path.abspath(__file__))
+from util import base_directory, get_file_from_url
 
 env_file_path = os.path.join(base_directory, ".env")
 print(env_file_path)
@@ -47,59 +44,6 @@ def get_random_url(url_list):
     url = random.choice(url_list)
     url_list.remove(url)
     return url, url_list
-
-
-def get_file_from_url(dest_directory, dest_file_name,  file_url, check_correct_aspect=True):
-    valid_extensions = ["png", "jpg"]
-    ext = file_url.split(".")[-1]
-    if ext not in valid_extensions:
-        return ""
-    response = requests.get(file_url)
-    response.raise_for_status()
-
-    content = response.content
-
-    file_name = dest_file_name + "." + ext
-    file_path = os.path.join(dest_directory, file_name)
-    final_path = os.path.join(dest_directory, "final." + ext)
-
-    print("File Saved at " + file_path)
-    with open(file_path, "wb") as f:
-        f.write(content)
-
-    is_correct_aspect, image_size = image_correct_aspect(file_path)
-    if check_correct_aspect:
-        if is_correct_aspect:
-            return file_path, final_path, image_size
-        else:
-            os.remove(file_path)
-            return "", "", image_size
-    else:
-        return file_path, final_path, image_size
-
-
-def get_screen_size():
-    user32 = ctypes.windll.user32
-    return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
-
-
-def get_screen_aspect_ratio():
-    screen_size = get_screen_size()
-    return screen_size[0] / screen_size[1]
-
-
-def image_correct_aspect(image_file_path):
-    # get screen size to resize to
-    # user32 = ctypes.windll.user32
-    # screensize = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
-
-    image = Image.open(image_file_path)
-    image_size = image.size
-    print(image_size)
-    if image_size[0] >= image_size[1]:
-        return True, image_size
-    else:
-        return False, image_size
 
 
 def set_file_to_desktop_background(image_file_path):
@@ -189,8 +133,6 @@ if __name__ == "__main__":
         # try to combine dailies to create a better bigger image
         do_combine_landscape_process(incorrect_aspect)
         print("Found No Good Aspect Images")
-
-
 
 
 

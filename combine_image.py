@@ -1,6 +1,6 @@
-from reddit_attempt import base_directory, get_file_from_url, get_screen_size, get_screen_aspect_ratio
 import os
 from PIL import Image
+from util import base_directory, get_screen_aspect_ratio, get_file_from_url
 
 HEIGHT = 1
 WIDTH = 0
