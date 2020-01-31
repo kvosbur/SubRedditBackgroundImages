@@ -16,11 +16,14 @@ urls = ['https://i.redd.it/d3rcv2shyid41.png',
 
 
 # another idea is to always add a kind of picture frame around all photos that are combined
-# do clean up image files that are the source for the combined image.
 # have program return a non-zero error code when failure occurs (only do this when shitty internet)
 # add logging of program so that it logs its output/ errors
 # if error occurs have default image to set as desktop background (or take from weekly in this case)
 # idea to possibly combine the weekly portrait photos together into landscape photos since not all are being used right now.
+# Fix up file names and project setup
+# add command line argument to rerun daily ignoring the last one that was run (will need to keep track of those to be ignored)
+# make better stat files in better locations.
+
 
 def get_size_data(single_image_data, index):
     return single_image_data[2][index]
