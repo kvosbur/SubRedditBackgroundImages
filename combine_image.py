@@ -1,6 +1,7 @@
 import os
 from PIL import Image
-from util import base_directory, get_screen_aspect_ratio, get_file_from_url
+from util import base_directory, get_screen_aspect_ratio, get_file_from_url, average_pixel_color, do_gradient
+from util import RIGHT, LEFT
 
 HEIGHT = 1
 WIDTH = 0
@@ -15,11 +16,14 @@ urls = ['https://i.redd.it/d3rcv2shyid41.png',
 
 
 # another idea is to always add a kind of picture frame around all photos that are combined
-# do clean up image files that are the source for the combined image.
 # have program return a non-zero error code when failure occurs (only do this when shitty internet)
 # add logging of program so that it logs its output/ errors
 # if error occurs have default image to set as desktop background (or take from weekly in this case)
 # idea to possibly combine the weekly portrait photos together into landscape photos since not all are being used right now.
+# Fix up file names and project setup
+# add command line argument to rerun daily ignoring the last one that was run (will need to keep track of those to be ignored)
+# make better stat files in better locations.
+
 
 def get_size_data(single_image_data, index):
     return single_image_data[2][index]
@@ -61,8 +65,13 @@ def combine_images(image_data, final_image_path):
 
     print("Start Image Combining Process")
     beg_x = 0
+    nextColor = None
     for pic in image_data:
         n = Image.open(pic[0])
+        if nextColor is not None:
+            currColor = average_pixel_color(n, LEFT)
+            do_gradient(temp, (beg_x - width_diff, 0), (beg_x, image_height - 1), nextColor, currColor)
+        nextColor = average_pixel_color(n, RIGHT)
         height_factor = (image_height - get_size_data(pic, HEIGHT)) // 2
         temp.paste(n, (beg_x, height_factor))
         beg_x += get_size_data(pic, WIDTH) + width_diff
@@ -73,6 +82,7 @@ def combine_images(image_data, final_image_path):
 
 
 target_aspect = get_screen_aspect_ratio()
+
 
 def closer_to_target(first, second):
     firstDiff = abs(first - target_aspect)
@@ -148,17 +158,22 @@ def write_image_statistics(image_data, file_path):
             f.write(pic[1] + "\n")
 
 
+
 def do_combine_landscape_process(image_data):
     dest_directory = os.path.join(base_directory, "PictureSource")
     final = os.path.join(dest_directory, "final.png")
 
     chosen_images, image_aspect = find_images_to_combine(image_data)
     final_data = substitute_data(chosen_images, image_data, dest_directory)
+
     combine_images(final_data, final)
     remove_image_files(final_data)
 
     stat_file_path = os.path.join(dest_directory, "tempStat.txt")
     write_image_statistics(final_data, stat_file_path)
+
+
+
 
 
 if __name__ == "__main__":
@@ -174,4 +189,13 @@ if __name__ == "__main__":
         ['https://i.redd.it/u3xj8s52tmd41.jpg', '/r/Animewallpaper/comments/evgkmc/chika_fujiwarakaguyasama_love_is_war_2250x4000/', (2250, 4000)]]
 
     do_combine_landscape_process(a)
+
+    exit(0)
+    test = Image.new("RGB", (1000, 1000), (0, 0, 0))
+
+    do_gradient(test, (0, 0), (1000, 1000), (117, 103, 108), (178, 156, 111))
+
+    path = os.path.join(base_directory, "test.PNG")
+    test.save(path, "PNG")
+
 
