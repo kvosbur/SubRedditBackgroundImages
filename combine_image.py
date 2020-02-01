@@ -1,10 +1,8 @@
 import os
 from PIL import Image
-from util import base_directory, get_screen_aspect_ratio, average_pixel_color, do_gradient
+from util import base_directory, get_screen_aspect_ratio, average_pixel_color, do_gradient, print_list
 from util import RIGHT, LEFT
-
-HEIGHT = 1
-WIDTH = 0
+from reddit_image import RedditImage
 
 urls = ['https://i.redd.it/d3rcv2shyid41.png',
         'https://i.redd.it/50bw2q84bgd41.jpg',
@@ -22,148 +20,139 @@ urls = ['https://i.redd.it/d3rcv2shyid41.png',
 # make better stat files in better locations.
 # look into adding a progress bar during the downloading portion of the application.
 
+class CombineImages:
+    target_aspect = get_screen_aspect_ratio()
 
-def get_size_data(single_image_data, index):
-    if index == WIDTH:
-        return single_image_data.imageWidth
-    elif index == HEIGHT:
-        return single_image_data.imageHeight
+    def __init__(self, allImageObjects, destDirectory):
+        self.allImageObjects = allImageObjects
+        self.destDirectory = destDirectory
+        self.selectedImages = []
 
+    @staticmethod
+    def get_good_aspect(image_objects, width, maxHeight, startIndex):
+        # iterate through all image_data to find best aspect
+        bestAspect = width / maxHeight
+        bestArr = []
 
-def get_max_size(image_data, size_type):
-    max_item = get_size_data(image_data[0], size_type)
-    for image in image_data[1:]:
-        max_item = max(max_item, get_size_data(image, size_type))
-    return max_item
+        for index in range(startIndex, len(image_objects)):
+            current_image = image_objects[index]
+            nextWidth = width + current_image.imageWidth
+            nextHeight = max(maxHeight, current_image.imageHeight)
+            new_aspect = nextWidth / nextHeight
+            if CombineImages.closer_to_target(new_aspect, bestAspect):
+                bestAspect = new_aspect
+                bestArr = [index]
+            if new_aspect <= CombineImages.target_aspect and index + 1 < len(image_objects):
+                bestFound = CombineImages.get_good_aspect(image_objects, nextWidth, nextHeight, index + 1)
+                if CombineImages.closer_to_target(bestFound[1], bestAspect):
+                    bestAspect = bestFound[1]
+                    bestArr = bestFound[0] + [index]
 
-def get_total_size(image_data, size_type):
-    item = 0
-    for image in image_data:
-        item += get_size_data(image, size_type)
-    return item
+        return [bestArr, bestAspect]
 
+    @staticmethod
+    def closer_to_target(first, second):
+        firstDiff = abs(first - CombineImages.target_aspect)
+        secondDiff = abs(second - CombineImages.target_aspect)
+        return firstDiff < secondDiff
 
-def get_current_aspect_ratio(image_data):
-    return get_total_size(image_data, WIDTH) / get_max_size(image_data, HEIGHT)
+    def find_images_to_combine(self):
+        self.allImageObjects = sorted(self.allImageObjects, reverse=True, key=lambda x: x.imageHeight)
+        height = self.allImageObjects[0].imageHeight
+        bestSolution = [[], 0]
+        beginIndex = 0
+        index = 1
+        while index < len(self.allImageObjects):
+            nextHeight = self.allImageObjects[index].imageHeight
+            if nextHeight < (height * 0.9):
+                solution = CombineImages.get_good_aspect(self.allImageObjects[beginIndex:index], 0, 1, 0)
+                if CombineImages.closer_to_target(solution[1], bestSolution[1]):
+                    bestSolution = solution
+                beginIndex = index
+                height = nextHeight
+            index += 1
 
+        if index - 1 != beginIndex:
+            sol = CombineImages.get_good_aspect(self.allImageObjects[beginIndex:index], 0, 1, 0)
+            if CombineImages.closer_to_target(sol[1], bestSolution[1]):
+                bestSolution = sol
 
-def combine_images(image_data, final_image_path):
-    width_diff = 0
-    if get_current_aspect_ratio(image_data) > get_screen_aspect_ratio():
-        # need to add more height to the image
-        image_width = get_total_size(image_data, WIDTH)
-        image_height = int(image_width // get_screen_aspect_ratio())
-    else:
-        # need to add more width to the image
+        return bestSolution
 
-        image_height = get_max_size(image_data, HEIGHT)
-        combined_width = get_total_size(image_data, WIDTH)
-        image_width = int(image_height * get_screen_aspect_ratio())
-        width_diff = (image_width - combined_width) // (len(image_data) - 1)
+    def substitute_data(self, chosen_indices):
+        self.selectedImages = []
+        for index in chosen_indices:
+            self.selectedImages.append(self.allImageObjects[index])
 
-    temp = Image.new("RGB", (image_width, image_height))
+    def get_max_size(self,  size_type):
+        max_item = RedditImage.get_size_data(self.selectedImages[0], size_type)
+        for image in self.selectedImages[1:]:
+            max_item = max(max_item, RedditImage.get_size_data(image, size_type))
+        return max_item
 
-    print("Start Image Combining Process")
-    beg_x = 0
-    nextColor = None
-    for pic in image_data:
-        portrait = Image.open(pic.imagePath)
-        if nextColor is not None:
-            # make gradient for in between images
-            currColor = average_pixel_color(portrait, LEFT)
-            do_gradient(temp, (beg_x - width_diff, 0), (beg_x, image_height - 1), nextColor, currColor)
-        nextColor = average_pixel_color(portrait, RIGHT)
-        height_factor = (image_height - get_size_data(pic, HEIGHT)) // 2
-        temp.paste(portrait, (beg_x, height_factor))
-        beg_x += get_size_data(pic, WIDTH) + width_diff
+    def get_total_size(self, size_type):
+        item = 0
+        for image in self.selectedImages:
+            item += RedditImage.get_size_data(image, size_type)
+        return item
 
-    print("Save Resulting Image")
-    temp.save(final_image_path, format="PNG")
-    print("Combined Image Saved")
+    def get_current_aspect_ratio(self):
+        return self.get_total_size(RedditImage.WIDTH) / self.get_max_size(RedditImage.HEIGHT)
 
+    def combine_images(self, final_image_path):
+        width_diff = 0
+        if self.get_current_aspect_ratio() > get_screen_aspect_ratio():
+            # need to add more height to the image
+            image_width = self.get_total_size(RedditImage.WIDTH)
+            image_height = int(image_width // get_screen_aspect_ratio())
+        else:
+            # need to add more width to the image
 
-target_aspect = get_screen_aspect_ratio()
+            image_height = self.get_max_size(RedditImage.HEIGHT)
+            combined_width = self.get_total_size(RedditImage.WIDTH)
+            image_width = int(image_height * get_screen_aspect_ratio())
+            width_diff = (image_width - combined_width) // (len(self.selectedImages) - 1)
 
+        temp = Image.new("RGB", (image_width, image_height))
 
-def closer_to_target(first, second):
-    firstDiff = abs(first - target_aspect)
-    secondDiff = abs(second - target_aspect)
-    return firstDiff < secondDiff
+        print("Start Image Combining Process")
+        beg_x = 0
+        nextColor = None
+        for pic in self.selectedImages:
+            portrait = Image.open(pic.imagePath)
+            if nextColor is not None:
+                # make gradient for in between images
+                currColor = average_pixel_color(portrait, LEFT)
+                do_gradient(temp, (beg_x - width_diff, 0), (beg_x, image_height - 1), nextColor, currColor)
+            nextColor = average_pixel_color(portrait, RIGHT)
+            height_factor = (image_height - RedditImage.get_size_data(pic, RedditImage.HEIGHT)) // 2
+            temp.paste(portrait, (beg_x, height_factor))
+            beg_x += RedditImage.get_size_data(pic, RedditImage.WIDTH) + width_diff
 
+        print("Save Resulting Image")
+        temp.save(final_image_path, format="PNG")
+        print("Combined Image Saved")
 
-def get_good_aspect(image_objects, width, maxHeight, startIndex):
-    # iterate through all image_data to find best aspect
-    bestAspect = width / maxHeight
-    bestArr = []
+    def write_image_statistics(self, file_path):
+        with open(file_path, "w") as f:
+            for pic in self.selectedImages:
+                f.write(pic.submissionUrl + "\n")
 
-    for index in range(startIndex, len(image_objects)):
-        current_image = image_objects[index]
-        nextWidth = width + current_image.imageWidth
-        nextHeight = max(maxHeight, current_image.imageHeight)
-        new_aspect = nextWidth / nextHeight
-        if closer_to_target(new_aspect, bestAspect):
-            bestAspect = new_aspect
-            bestArr = [index]
-        if new_aspect <= target_aspect and index + 1 < len(image_objects):
-            bestFound = get_good_aspect(image_objects, nextWidth, nextHeight, index + 1)
-            if closer_to_target(bestFound[1], bestAspect):
-                bestAspect = bestFound[1]
-                bestArr = bestFound[0] + [index]
+    def do_combine_landscape_process(self):
+        final = os.path.join(self.destDirectory, "final.png")
 
-    return [bestArr, bestAspect]
+        chosen_images, image_aspect = self.find_images_to_combine()
+        self.substitute_data(chosen_images)
 
+        try:
+            self.combine_images(final)
+        except Exception:
+            print_list(self.selectedImages)
+            raise
 
-def find_images_to_combine(image_objects):
-    ids = sorted(image_objects, reverse=True, key=lambda x: x.imageHeight)
-    height = ids[0].imageHeight
-    bestSolution = [[], 0]
-    beginIndex = 0
-    index = 1
-    while index < len(ids):
-        nextHeight = ids[index].imageHeight
-        if nextHeight < (height * 0.8):
-            solution = get_good_aspect(ids[beginIndex:index], 0, 1, 0)
-            if closer_to_target(solution[1], bestSolution[1]):
-                bestSolution = solution
-            beginIndex = index
-            height = nextHeight
-        index += 1
-
-    if index - 1 != beginIndex:
-        sol = get_good_aspect(ids[beginIndex:index], 0, 1, 0)
-        if closer_to_target(sol[1], bestSolution[1]):
-            bestSolution = sol
-
-    return bestSolution
-
-
-def substitute_data(chosen_indices, image_objects):
-    final_data = []
-    for index in chosen_indices:
-        final_data.append(image_objects[index])
-    return final_data
-
-
-def write_image_statistics(image_data, file_path):
-    with open(file_path, "w") as f:
-        for pic in image_data:
-            f.write(pic[1] + "\n")
-
-
-def do_combine_landscape_process(image_objects):
-    dest_directory = os.path.join(base_directory, "PictureSource")
-    final = os.path.join(dest_directory, "final.png")
-
-    chosen_images, image_aspect = find_images_to_combine(image_objects)
-    final_data = substitute_data(chosen_images, image_objects)
-
-    combine_images(final_data, final)
-
-    stat_file_path = os.path.join(dest_directory, "tempStat.txt")
-    write_image_statistics(final_data, stat_file_path)
-
-
-
+        stat_file_path = os.path.join(self.destDirectory, "tempStat.txt")
+        self.write_image_statistics(stat_file_path)
+        return final
 
 
 if __name__ == "__main__":
@@ -178,7 +167,9 @@ if __name__ == "__main__":
         ['https://i.redd.it/xs3ts5c46od41.png', '/r/Animewallpaper/comments/evjmnb/sunset_original_1262x2246/', (1262, 2246)],
         ['https://i.redd.it/u3xj8s52tmd41.jpg', '/r/Animewallpaper/comments/evgkmc/chika_fujiwarakaguyasama_love_is_war_2250x4000/', (2250, 4000)]]
 
-    do_combine_landscape_process(a)
+    ci = CombineImages(a, os.path.join(base_directory, "PictureSource"))
+    ci.do_combine_landscape_process()
+
 
     exit(0)
     test = Image.new("RGB", (1000, 1000), (0, 0, 0))

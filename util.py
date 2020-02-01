@@ -16,8 +16,10 @@ def get_random_url(url_list):
 
 def print_list(l):
     print("[")
+    index = 0
     for item in l:
-        print(item, ",")
+        print(index, str(item), ",")
+        index += 1
     print("]")
 
 
@@ -51,8 +53,12 @@ def average_pixel_color(image_object, side):
     if side == RIGHT:
         w = width - 1
     for h in range(height):
-        print(image_object.getpixel((w, h)))
-        nextR, nextG, nextB = image_object.getpixel((w, h))
+        pixel= image_object.getpixel((w, h))
+        if len(pixel) == 3:
+            nextR, nextG, nextB = pixel
+        # ignore alpha if it is given
+        elif len(pixel) == 4:
+            nextR, nextG, nextB, _ = pixel
         r += nextR
         g += nextG
         b += nextB
@@ -73,3 +79,5 @@ def do_gradient(image_obj, upperLeft, lowerRight, leftColor, rightColor):
         colorG = round(leftColor[1] - (percent_dist * diff_g))
         colorB = round(leftColor[2] - (percent_dist * diff_b))
         drawer.line((x, upperLeft[1], x, lowerRight[1]), fill=(colorR, colorG, colorB))
+
+

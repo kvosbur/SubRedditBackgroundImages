@@ -1,13 +1,15 @@
 import requests
 from tempfile import mkstemp
 from PIL import Image
-import ctypes
 import shutil
 import os
+import ctypes
 
 
 class RedditImage:
 
+    HEIGHT = 0
+    WIDTH = 1
     validImageTypes = ["png", "jpg"]
 
     def __init__(self, imageUrl, submissionUrl):
@@ -19,6 +21,15 @@ class RedditImage:
         self.ext = ""
         self.destDirectory = ""
 
+    def __str__(self):
+        return "URL: " + self.imageUrl + "  FilePath:" + self.imagePath + "  Height:" + str(self.imageHeight)
+
+    @staticmethod
+    def get_size_data(imageObject, size_type):
+        if size_type == RedditImage.WIDTH:
+            return imageObject.imageWidth
+        elif size_type == RedditImage.HEIGHT:
+            return imageObject.imageHeight
 
     def get_image_path(self):
         if self.imagePath == "":
@@ -26,7 +37,6 @@ class RedditImage:
             a = 3
 
         return self.imagePath
-
 
     def image_is_landscape(self):
         # get screen size to resize to
@@ -69,16 +79,18 @@ class RedditImage:
         self.imagePath = ""
         return final_path
 
-    def set_file_to_desktop_background(self):
-        final_path = self.save_image_to_final_path()
-
+    @staticmethod
+    def set_image_to_desktop_background(image_path):
         SPI_SETDESKWALLPAPER = 20
-        ctypes.windll.user32.SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, final_path, 0)
+        ctypes.windll.user32.SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, image_path, 0)
+
+    def set_to_desktop_background(self):
+        final_path = self.save_image_to_final_path()
+        RedditImage.set_image_to_desktop_background(final_path)
 
     def cleanup(self):
         if self.imagePath != "":
             os.remove(self.imagePath)
-
 
     def image_downloaded(self):
         return self.imagePath != ""

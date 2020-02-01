@@ -2,7 +2,7 @@ import praw
 import os
 from util import readConfigFile, base_directory, get_random_url
 from reddit_image import RedditImage
-from combine_image import do_combine_landscape_process
+from combine_image import CombineImages
 
 dest_directory = os.path.join(base_directory, "PictureSource")
 
@@ -43,37 +43,37 @@ class RedditAPI:
 
 
     def do_daily_iteration(self):
-
-        urls = self.get_submissions_for_subreddit("day")
-
-        # get suitable image for desktop background
-        file_path = ""
-        final_path = ""
         incorrect_aspect = []
         correct_aspect = []
+        try:
+            urls = self.get_submissions_for_subreddit("day")
 
-        while len(urls) != 0:
+            # get suitable image for desktop background
+            while len(urls) != 0:
 
-            # select specific url at random
-            attempt, urls = get_random_url(urls)
-            image_url, post_permalink = attempt
+                # select specific url at random
+                attempt, urls = get_random_url(urls)
+                image_url, post_permalink = attempt
 
-            # save first attempt at okay file url
-            imageObj = RedditImage(image_url, post_permalink)
-            imageObj.get_image_from_url(dest_directory)
-            if not imageObj.image_downloaded():
-                continue
+                # save first attempt at okay file url
+                imageObj = RedditImage(image_url, post_permalink)
+                imageObj.get_image_from_url(dest_directory)
+                if not imageObj.image_downloaded():
+                    continue
 
-            if imageObj.image_is_landscape():
-                correct_aspect.append(imageObj)
+                if imageObj.image_is_landscape():
+                    correct_aspect.append(imageObj)
+                else:
+                    incorrect_aspect.append(imageObj)
+
+            if len(incorrect_aspect) > 0:
+                ci = CombineImages(incorrect_aspect, dest_directory)
+                pathOfResult = ci.do_combine_landscape_process()
+                RedditImage.set_image_to_desktop_background(pathOfResult)
             else:
-                incorrect_aspect.append(imageObj)
+                correct_aspect[0].set_to_desktop_background()
 
-        if len(incorrect_aspect) > 0:
-            do_combine_landscape_process(incorrect_aspect)
-        else:
-            correct_aspect[0].set_file_to_desktop_background()
-
-        # cleanup all images that had been temporarily downloaded
-        for image in incorrect_aspect + correct_aspect:
-            image.cleanup()
+        finally:
+            # cleanup all images that had been temporarily downloaded
+            for image in incorrect_aspect + correct_aspect:
+                image.cleanup()
