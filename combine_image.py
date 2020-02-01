@@ -1,6 +1,6 @@
 import os
 from PIL import Image
-from util import base_directory, get_screen_aspect_ratio, get_file_from_url, average_pixel_color, do_gradient
+from util import base_directory, get_screen_aspect_ratio, average_pixel_color, do_gradient
 from util import RIGHT, LEFT
 
 HEIGHT = 1
@@ -8,25 +8,26 @@ WIDTH = 0
 
 urls = ['https://i.redd.it/d3rcv2shyid41.png',
         'https://i.redd.it/50bw2q84bgd41.jpg',
-        'https://i.redd.it/3sf6lkuvwid41.png' ]
+        'https://i.redd.it/3sf6lkuvwid41.png']
 
 
-# have a gradient in between the photos using the edge pixel average to decide the two sides of the gradient.
-# will have to do gradient calculations manually though I can use ImageDraw from pil to help the process go nicer
 
-
-# another idea is to always add a kind of picture frame around all photos that are combined
+# another idea is to always add a kind of picture frame around all photos that are combined (prob not going to do)
 # have program return a non-zero error code when failure occurs (only do this when shitty internet)
-# add logging of program so that it logs its output/ errors
+# add logging of program so that it logs its output / errors
 # if error occurs have default image to set as desktop background (or take from weekly in this case)
 # idea to possibly combine the weekly portrait photos together into landscape photos since not all are being used right now.
 # Fix up file names and project setup
 # add command line argument to rerun daily ignoring the last one that was run (will need to keep track of those to be ignored)
 # make better stat files in better locations.
+# look into adding a progress bar during the downloading portion of the application.
 
 
 def get_size_data(single_image_data, index):
-    return single_image_data[2][index]
+    if index == WIDTH:
+        return single_image_data.imageWidth
+    elif index == HEIGHT:
+        return single_image_data.imageHeight
 
 
 def get_max_size(image_data, size_type):
@@ -62,18 +63,18 @@ def combine_images(image_data, final_image_path):
 
     temp = Image.new("RGB", (image_width, image_height))
 
-
     print("Start Image Combining Process")
     beg_x = 0
     nextColor = None
     for pic in image_data:
-        n = Image.open(pic[0])
+        portrait = Image.open(pic.imagePath)
         if nextColor is not None:
-            currColor = average_pixel_color(n, LEFT)
+            # make gradient for in between images
+            currColor = average_pixel_color(portrait, LEFT)
             do_gradient(temp, (beg_x - width_diff, 0), (beg_x, image_height - 1), nextColor, currColor)
-        nextColor = average_pixel_color(n, RIGHT)
+        nextColor = average_pixel_color(portrait, RIGHT)
         height_factor = (image_height - get_size_data(pic, HEIGHT)) // 2
-        temp.paste(n, (beg_x, height_factor))
+        temp.paste(portrait, (beg_x, height_factor))
         beg_x += get_size_data(pic, WIDTH) + width_diff
 
     print("Save Resulting Image")
@@ -90,21 +91,21 @@ def closer_to_target(first, second):
     return firstDiff < secondDiff
 
 
-def get_good_aspect(image_data, width, maxHeight, startIndex):
+def get_good_aspect(image_objects, width, maxHeight, startIndex):
     # iterate through all image_data to find best aspect
     bestAspect = width / maxHeight
     bestArr = []
 
-    for index in range(startIndex, len(image_data)):
-        current_image = image_data[index]
-        nextWidth = width + get_size_data(current_image, WIDTH)
-        nextHeight = max(maxHeight, get_size_data(current_image, HEIGHT))
+    for index in range(startIndex, len(image_objects)):
+        current_image = image_objects[index]
+        nextWidth = width + current_image.imageWidth
+        nextHeight = max(maxHeight, current_image.imageHeight)
         new_aspect = nextWidth / nextHeight
         if closer_to_target(new_aspect, bestAspect):
             bestAspect = new_aspect
             bestArr = [index]
-        if new_aspect <= target_aspect and index + 1 < len(image_data):
-            bestFound = get_good_aspect(image_data, nextWidth, nextHeight, index + 1)
+        if new_aspect <= target_aspect and index + 1 < len(image_objects):
+            bestFound = get_good_aspect(image_objects, nextWidth, nextHeight, index + 1)
             if closer_to_target(bestFound[1], bestAspect):
                 bestAspect = bestFound[1]
                 bestArr = bestFound[0] + [index]
@@ -112,14 +113,14 @@ def get_good_aspect(image_data, width, maxHeight, startIndex):
     return [bestArr, bestAspect]
 
 
-def find_images_to_combine(image_data):
-    ids = sorted(image_data, reverse=True, key=lambda x: x[-1][1])
-    height = get_size_data(ids[0], HEIGHT)
+def find_images_to_combine(image_objects):
+    ids = sorted(image_objects, reverse=True, key=lambda x: x.imageHeight)
+    height = ids[0].imageHeight
     bestSolution = [[], 0]
     beginIndex = 0
     index = 1
     while index < len(ids):
-        nextHeight = get_size_data(ids[index], HEIGHT)
+        nextHeight = ids[index].imageHeight
         if nextHeight < (height * 0.8):
             solution = get_good_aspect(ids[beginIndex:index], 0, 1, 0)
             if closer_to_target(solution[1], bestSolution[1]):
@@ -130,26 +131,17 @@ def find_images_to_combine(image_data):
 
     if index - 1 != beginIndex:
         sol = get_good_aspect(ids[beginIndex:index], 0, 1, 0)
-        if closer_to_target(solution[1], bestSolution[1]):
-            bestSolution = solution
-        print(sol)
+        if closer_to_target(sol[1], bestSolution[1]):
+            bestSolution = sol
 
     return bestSolution
 
 
-def substitute_data(chosen_indices, image_data, dest_directory):
+def substitute_data(chosen_indices, image_objects):
     final_data = []
     for index in chosen_indices:
-        temp = get_file_from_url(dest_directory, "image" + str(index), image_data[index][0], check_correct_aspect=False)
-        temp = list(temp)
-        temp[1] = image_data[index][0]
-        final_data.append(temp)
+        final_data.append(image_objects[index])
     return final_data
-
-
-def remove_image_files(image_data):
-    for pic in image_data:
-        os.remove(pic[0])
 
 
 def write_image_statistics(image_data, file_path):
@@ -158,16 +150,14 @@ def write_image_statistics(image_data, file_path):
             f.write(pic[1] + "\n")
 
 
-
-def do_combine_landscape_process(image_data):
+def do_combine_landscape_process(image_objects):
     dest_directory = os.path.join(base_directory, "PictureSource")
     final = os.path.join(dest_directory, "final.png")
 
-    chosen_images, image_aspect = find_images_to_combine(image_data)
-    final_data = substitute_data(chosen_images, image_data, dest_directory)
+    chosen_images, image_aspect = find_images_to_combine(image_objects)
+    final_data = substitute_data(chosen_images, image_objects)
 
     combine_images(final_data, final)
-    remove_image_files(final_data)
 
     stat_file_path = os.path.join(dest_directory, "tempStat.txt")
     write_image_statistics(final_data, stat_file_path)
