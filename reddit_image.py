@@ -69,7 +69,7 @@ class RedditImage:
 
         descriptor, self.imagePath = mkstemp(suffix="." + ext, dir=destDirectory)
 
-        print("File Saved at " + self.imagePath)
+        #print("File Saved at " + self.imagePath)
         with os.fdopen(descriptor, "wb") as imageFile:
             imageFile.write(content)
 

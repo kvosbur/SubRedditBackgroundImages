@@ -18,7 +18,6 @@ urls = ['https://i.redd.it/d3rcv2shyid41.png',
 # Fix up file names and project setup
 # add command line argument to rerun daily ignoring the last one that was run (will need to keep track of those to be ignored)
 # make better stat files in better locations.
-# look into adding a progress bar during the downloading portion of the application.
 
 class CombineImages:
     target_aspect = get_screen_aspect_ratio()
