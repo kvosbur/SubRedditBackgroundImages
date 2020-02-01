@@ -1,11 +1,27 @@
 import os
 import ctypes
-import requests
-from PIL import Image, ImageDraw
+from PIL import ImageDraw
 import configparser
 import random
 
 base_directory = os.path.dirname(os.path.abspath(__file__))
+
+
+def init_directories():
+    pictureDirectory = os.path.join(base_directory, "PictureSource")
+    if not os.path.exists(pictureDirectory):
+        os.mkdir(pictureDirectory)
+
+    lockScreenDirectory = os.path.join(pictureDirectory, "LockScreen")
+    if not os.path.exists(lockScreenDirectory):
+        os.mkdir(lockScreenDirectory)
+
+
+def remove_all_files(directory):
+    prev = os.listdir(directory)
+    for f in prev:
+        full = os.path.join(directory, f)
+        os.remove(full)
 
 
 def get_random_url(url_list):
