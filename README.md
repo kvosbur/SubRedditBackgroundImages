@@ -16,6 +16,8 @@ up as a possible background image.
 to filter for NSFW is on or not. 
 5. Create a Reddit API project ( this is needed to access the images)
 6. Create a .env file in the directory that is a copy of the example.env with your api secret key in the file instead of 'aaaaaaaaaaaaa'
+7. Will need to update the line in reddit_api.py for USER_AGENT to follow the guidlines set in https://github.com/reddit-archive/reddit/wiki/API
+for your reddit project.
 
 # Running the Program
 The program is executed by way of running the following command in terminal 
