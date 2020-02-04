@@ -27,7 +27,12 @@ These include showing a progress bar for image downloads or not running the week
 
 If you want to have this program run daily then make sure to set this up in task scheduler for a recurring task.
 
+# Notice an issue?
+I am not perfect if you notice something that just quite isn't right or is crashing please make
+an issue on github with as much information and possibly photos of what is occurring. 
 
+If you want support for other OS consider figuring out what changes need to be made and make a pull request to get it added 
+to the current release.
 
 
 
