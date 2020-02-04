@@ -23,8 +23,10 @@ to filter for NSFW is on or not.
 6. Create a .env file in the directory that is a copy of the example.env with your api secret key in the file instead of 'aaaaaaaaaaaaa'. Your api secret 
 can be found where you created your Reddit API app. If you aren't seeing it then you will need to click to edit the app and then 
 it will popup with the applications secret.
-7. Will need to update the line in reddit_api.py for USER_AGENT to follow the guidlines set in https://github.com/reddit-archive/reddit/wiki/API
+7. Will need to update your USER_AGENT field in your .env to follow the guidelines set in https://github.com/reddit-archive/reddit/wiki/API
 for your reddit project.
+8. Will need to update your CLIENT_ID field in your .env file. This value can be found just under your
+Reddit API application Name on their website. (an example of what it will look like value wise is already in example.env)
 
 # Running the Program
 The program is executed by way of running the following command in terminal 

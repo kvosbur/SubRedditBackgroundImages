@@ -26,7 +26,7 @@ class RedditAPI:
         self.correct_aspect = []
 
 
-        self.apiObject = praw.Reddit(client_id='gSozMpmngIW2Lg',
+        self.apiObject = praw.Reddit(client_id=os.environ["CLIENT_ID"],
                          client_secret=os.environ["SECRET"],
                          user_agent=os.environ["USER_AGENT"])
 
