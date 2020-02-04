@@ -89,7 +89,7 @@ class RedditImage:
         RedditImage.set_image_to_desktop_background(final_path)
 
     def cleanup(self):
-        if self.imagePath != "":
+        if self.imagePath != "" and os.path.exists(self.imagePath):
             os.remove(self.imagePath)
 
     def image_downloaded(self):

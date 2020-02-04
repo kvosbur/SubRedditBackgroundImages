@@ -22,10 +22,17 @@ class RedditAPI:
         self.nsfw_allowed = general.getboolean("NSFW_ALLOWED")
         self.subreddits = general["SUBREDDITS"]
 
+        self.incorrect_aspect = []
+        self.correct_aspect = []
+
 
         self.apiObject = praw.Reddit(client_id='gSozMpmngIW2Lg',
                          client_secret=os.environ["SECRET"],
                          user_agent=os.environ["USER_AGENT"])
+
+    def do_cleanup(self):
+        for image in self.incorrect_aspect + self.correct_aspect:
+            image.cleanup()
 
     def get_submissions_for_subreddit(self, time_filter="day"):
         submissions = self.apiObject.subreddit(self.subreddits).top(time_filter)
@@ -45,13 +52,13 @@ class RedditAPI:
         return image_urls
 
     def do_daily_iteration(self):
-        incorrect_aspect = []
-        correct_aspect = []
+        self.incorrect_aspect = []
+        self.correct_aspect = []
+        progressBar = None
         try:
             urls = self.get_submissions_for_subreddit("day")
 
             totalCount = len(urls)
-            progressBar = None
             if self.args.show_progress:
                 progressBar = Bar("Downloading Daily Images", max=totalCount, suffix='%(index)d / %(max)d  %(percent)d%%')
                 progressBar.start()
@@ -68,26 +75,31 @@ class RedditAPI:
                     continue
 
                 if imageObj.image_is_landscape():
-                    correct_aspect.append(imageObj)
+                    self.correct_aspect.append(imageObj)
                 else:
-                    incorrect_aspect.append(imageObj)
+                    self.incorrect_aspect.append(imageObj)
                 if progressBar is not None:
                     progressBar.next()
 
             if progressBar is not None:
                 progressBar.finish()
+                progressBar = None
 
-            if len(incorrect_aspect) > 0:
-                ci = CombineImages(incorrect_aspect, dest_directory)
+            if len(self.incorrect_aspect) > 0:
+                ci = CombineImages(self.incorrect_aspect, dest_directory)
                 pathOfResult = ci.do_combine_landscape_process()
                 RedditImage.set_image_to_desktop_background(pathOfResult)
             else:
-                correct_aspect[0].set_to_desktop_background()
-
+                self.correct_aspect[0].set_to_desktop_background()
+        except KeyboardInterrupt:
+            None
         finally:
             # cleanup all images that had been temporarily downloaded
-            for image in incorrect_aspect + correct_aspect:
-                image.cleanup()
+            if progressBar is not None:
+                progressBar.finish()
+            print("\nCleaning Up Files Before Termination\n")
+            self.do_cleanup()
+
 
     @staticmethod
     def should_run_weekly():
