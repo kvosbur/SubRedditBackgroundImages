@@ -9,6 +9,7 @@ load_dotenv(env_file_path)
 
 parser = argparse.ArgumentParser(description="Run EDI")
 parser.add_argument("--show-progress", action="store_true", help="Show Progress Bars for Downloads")
+parser.add_argument("--no-weekly", default=False, action="store_true", help="Disables the program from trying to run the weekly lockscreen photos portion")
 
 
 if __name__ == "__main__":
@@ -18,7 +19,8 @@ if __name__ == "__main__":
 
     api = RedditAPI(args)
     api.do_daily_iteration()
-    api.do_weekly_iteration()
+    if not args.no_weekly:
+        api.do_weekly_iteration()
 
 
 
