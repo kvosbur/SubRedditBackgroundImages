@@ -1,5 +1,10 @@
 # SubRedditBackgroundImages
-The idea behind this is to make a program that cycles through and sets your desktop background based off of popular wallpapers submitted to a subreddit of your choice.
+The idea behind this is to make a program that cycles through and sets your desktop background based
+ off of popular wallpapers submitted to a subreddit of your choice. This program will also try to combine
+ portrait photos together to match your aspect ratio of your device so that the image is never cut off and looks awesome. 
+ 
+ It will also gather up popular weekly images and save them into a folder to be used for a lockscreen
+ slideshow if that is what is wanted.
 
 # Important
  - This program does NOT work on anything other than Windows, since it uses Windows specific
@@ -37,6 +42,9 @@ an issue on github with as much information and possibly photos of what is occur
 
 If you want support for other OS consider figuring out what changes need to be made and make a pull request to get it added 
 to the current release.
+
+If you have any suggestions on improvements other than OS support make a github issue for it and
+maybe try tackling it yourself and make a pull request from it.
 
 
 
