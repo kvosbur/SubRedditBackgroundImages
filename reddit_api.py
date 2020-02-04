@@ -7,7 +7,6 @@ import datetime
 from progress.bar import Bar
 
 dest_directory = os.path.join(base_directory, "PictureSource")
-USER_AGENT = 'Windows:SubredditBackground:v0.0.0 (by u/shoot2thr1ll284)'
 
 
 class RedditAPI:
@@ -26,7 +25,7 @@ class RedditAPI:
 
         self.apiObject = praw.Reddit(client_id='gSozMpmngIW2Lg',
                          client_secret=os.environ["SECRET"],
-                         user_agent=USER_AGENT)
+                         user_agent=os.environ["USER_AGENT"])
 
     def get_submissions_for_subreddit(self, time_filter="day"):
         submissions = self.apiObject.subreddit(self.subreddits).top(time_filter)
