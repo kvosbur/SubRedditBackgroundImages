@@ -19,7 +19,7 @@ up as a possible background image.
 3. pip install -r requirements.txt (download needed dependencies)
 4. Edit config.ini to change how program will work. This is where you will set the subreddit that is to be accessed and whether
 to filter for NSFW is on or not. 
-5. Create a Reddit API project. This can be done by going to https://www.reddit.com/prefs/apps and creating a new app (this is needed to access the images)
+5. Create a Reddit API project. Please make sure that you choose Script from the three types of applications listed. (it lists web app, installed app, script) This can be done by going to https://www.reddit.com/prefs/apps and creating a new app (this is needed to access the images)
 6. Create a .env file in the directory that is a copy of the example.env with your api secret key in the file instead of 'aaaaaaaaaaaaa'. Your api secret 
 can be found where you created your Reddit API app. If you aren't seeing it then you will need to click to edit the app and then 
 it will popup with the applications secret.
