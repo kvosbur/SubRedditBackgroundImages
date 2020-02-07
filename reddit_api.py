@@ -47,7 +47,7 @@ class RedditAPI:
             print(sub.url)
             '''
             # parse
-            if sub.url != '' and (sub.over_18 == self.nsfw_allowed):
+            if sub.url != '' and (self.nsfw_allowed or sub.over_18 == self.nsfw_allowed):
                 image_urls.append((sub.url, sub.permalink))
         return image_urls
 
