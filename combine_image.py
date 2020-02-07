@@ -119,7 +119,7 @@ class CombineImages:
             beg_x += RedditImage.get_size_data(pic, RedditImage.WIDTH) + width_diff
 
         print("Save Resulting Image")
-        temp.save(final_image_path, format="PNG")
+        temp.save(final_image_path, format="JPEG")
         print("Combined Image Saved")
 
     def write_image_statistics(self, file_path):
@@ -128,7 +128,7 @@ class CombineImages:
                 f.write(pic.submissionUrl + "\n")
 
     def do_combine_landscape_process(self):
-        final = os.path.join(self.destDirectory, "final.png")
+        final = os.path.join(self.destDirectory, "final.jpg")
 
         chosen_images, image_aspect = self.find_images_to_combine()
         self.substitute_data(chosen_images)
