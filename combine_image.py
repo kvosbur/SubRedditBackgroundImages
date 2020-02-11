@@ -55,6 +55,10 @@ class CombineImages:
             nextHeight = self.allImageObjects[index].imageHeight
             if nextHeight < (height * 0.9):
                 solution = CombineImages.get_good_aspect(self.allImageObjects[beginIndex:index], 0, 1, 0)
+
+                # fix issue that came up that solution gives slice index and not overall list index
+                for index in range(len(solution[0])):
+                    solution[0][index] += beginIndex
                 if CombineImages.closer_to_target(solution[1], bestSolution[1]):
                     bestSolution = solution
                 beginIndex = index
@@ -148,17 +152,31 @@ if __name__ == "__main__":
 
 
     # test data
-    a = [['https://i.redd.it/ew47fvqvrqd41.png', '/r/Animewallpaper/comments/evp08d/megumin_konosuba_2250x4000/', (2250, 4000)],
-        ['https://i.redd.it/73k8un5iiqd41.png', '/r/Animewallpaper/comments/evo6oj/gudas_ritsuka_and_mashu_fategrand_order2250x4000/', (2250, 4000)],
-        ['https://i.redd.it/e4bptn0tumd41.jpg', '/r/Animewallpaper/comments/evgp0u/kurumi_tokisawadate_a_live_2250x4000/', (2250, 4000)],
-        ['https://i.redd.it/mnab4a3gbqd41.png', '/r/Animewallpaper/comments/evnonz/marnie_and_gloria_pokémon_sword_shield_2250x4000/', (2250, 4000)],
-        ['https://i.redd.it/jd8g5coqqmd41.jpg', '/r/Animewallpaper/comments/evgeeq/pop_style_bunny_girloriginal_2250x4000/', (4250, 4000)],
-        ['https://i.redd.it/xs3ts5c46od41.png', '/r/Animewallpaper/comments/evjmnb/sunset_original_1262x2246/', (1262, 2246)],
-        ['https://i.redd.it/u3xj8s52tmd41.jpg', '/r/Animewallpaper/comments/evgkmc/chika_fujiwarakaguyasama_love_is_war_2250x4000/', (2250, 4000)]]
+    urls = ["https://i.redd.it/jo7eoqh9gue41.jpg",
+         "https://i.imgur.com/EutiMfe.jpg",
+         "https://i.redd.it/99qky2zx6ve41.png",
+         "https://i.redd.it/fszcdofojue41.jpg",
+         "https://i.redd.it/wwt28ys8lue41.jpg",
+         "https://i.redd.it/bmdk44wvmxe41.png",
+         "https://i.redd.it/slraqbhomxe41.png",
+         "https://i.redd.it/lzitvr0hxue41.jpg",
+         "https://i.redd.it/olcckyd4iue41.jpg"]
 
-    ci = CombineImages(a, os.path.join(base_directory, "PictureSource"))
-    ci.do_combine_landscape_process()
+    imageObjects = []
+    # get image objects for urls
+    dest_directory = os.path.join(base_directory, "PictureSource")
+    for url in urls:
+        print(url)
+        imageObj = RedditImage(url, "")
+        imageObj.get_image_from_url(dest_directory)
+        imageObj.image_is_landscape()
+        imageObjects.append(imageObj)
 
+    ci = CombineImages(imageObjects, dest_directory)
+    pathOfResult = ci.do_combine_landscape_process()
+    for imageObj in imageObjects:
+        imageObj.cleanup()
+    print(pathOfResult)
 
     exit(0)
     # test gradient util method
