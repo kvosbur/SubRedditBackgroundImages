@@ -1,7 +1,7 @@
 import os
 from PIL import Image
 from util import base_directory, get_screen_aspect_ratio, average_pixel_color, do_gradient, print_list
-from util import RIGHT, LEFT
+from util import RIGHT, LEFT, readConfigFile
 from reddit_image import RedditImage
 
 urls = ['https://i.redd.it/d3rcv2shyid41.png',
@@ -15,6 +15,9 @@ class CombineImages:
     def __init__(self, allImageObjects, destDirectory):
         self.allImageObjects = allImageObjects
         self.destDirectory = destDirectory
+        config = readConfigFile()
+        general = config["GENERAL"]
+        self.allowedAspectDiff = general.getfloat("ALLOWED_ASPECT_DIFF")
         self.selectedImages = []
 
     @staticmethod
@@ -44,6 +47,13 @@ class CombineImages:
         firstDiff = abs(first - CombineImages.target_aspect)
         secondDiff = abs(second - CombineImages.target_aspect)
         return firstDiff < secondDiff
+
+    def acceptable_difference(self, givenAspect):
+        diff = abs(givenAspect - CombineImages.target_aspect)
+        if diff < self.allowedAspectDiff:
+            return True
+        else:
+            return False
 
     def find_images_to_combine(self):
         self.allImageObjects = sorted(self.allImageObjects, reverse=True, key=lambda x: x.imageHeight)
@@ -141,6 +151,8 @@ class CombineImages:
 
         chosen_images, image_aspect = self.find_images_to_combine()
         self.substitute_data(chosen_images)
+        if not self.acceptable_difference(image_aspect):
+            return ""
 
         try:
             self.combine_images(final)
@@ -154,14 +166,14 @@ class CombineImages:
 
     def iterate_combine_landscape(self):
         iterate = 0
-        print("start")
-        print(len(self.allImageObjects))
+        print("start Combining")
         while len(self.allImageObjects) > 0:
-            print("before")
             b = self.do_combine_landscape_process(dest_file_name="final" + str(iterate) + ".jpg")
+            if b == "":
+                # this means that there isn't a good match now, which means that no
+                break
             print(b)
             iterate += 1
-            print(iterate)
 
 
 if __name__ == "__main__":

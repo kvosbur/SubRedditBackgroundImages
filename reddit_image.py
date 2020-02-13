@@ -95,4 +95,8 @@ class RedditImage:
     def image_downloaded(self):
         return self.imagePath != ""
 
+    def move_to_folder(self, folder):
+        _, name = os.path.split(self.imagePath)
+        shutil.copy(self.imagePath, os.path.join(folder, name))
+
 

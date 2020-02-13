@@ -103,7 +103,6 @@ class RedditAPI:
 
     @staticmethod
     def should_run_weekly():
-        return True
         file_path = os.path.join(base_directory, "PictureSource", "lastran.txt")
         if os.path.exists(file_path):
             # check file to see last time it was run
@@ -128,6 +127,7 @@ class RedditAPI:
             initialSource = os.path.join(base_directory, "PictureSource", "LockScreenSource")
             finalSource = os.path.join(base_directory, "PictureSource", "LockScreen")
             remove_all_files(initialSource)
+            remove_all_files(finalSource)
             weekly_urls = self.get_submissions_for_subreddit("week")
             totalCount = len(weekly_urls)
             progressBar = None
@@ -159,6 +159,10 @@ class RedditAPI:
 
                 if progressBar is not None:
                     progressBar.finish()
+
+                for imageObj in landscape:
+                    imageObj.move_to_folder(finalSource)
+                    print("did the copy")
 
                 # iterate through creating landscape photos
                 ci = CombineImages(portrait, finalSource)
