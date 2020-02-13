@@ -57,8 +57,8 @@ class CombineImages:
                 solution = CombineImages.get_good_aspect(self.allImageObjects[beginIndex:index], 0, 1, 0)
 
                 # fix issue that came up that solution gives slice index and not overall list index
-                for index in range(len(solution[0])):
-                    solution[0][index] += beginIndex
+                for indexA in range(len(solution[0])):
+                    solution[0][indexA] += beginIndex
                 if CombineImages.closer_to_target(solution[1], bestSolution[1]):
                     bestSolution = solution
                 beginIndex = index
@@ -76,6 +76,11 @@ class CombineImages:
         self.selectedImages = []
         for index in chosen_indices:
             self.selectedImages.append(self.allImageObjects[index])
+
+        # update list of image objects to possibly be used for further combinations
+        temp = sorted(chosen_indices, reverse=True)
+        for index in temp:
+            del self.allImageObjects[index]
 
     def get_max_size(self,  size_type):
         max_item = RedditImage.get_size_data(self.selectedImages[0], size_type)
@@ -131,8 +136,8 @@ class CombineImages:
             for pic in self.selectedImages:
                 f.write(pic.submissionUrl + "\n")
 
-    def do_combine_landscape_process(self):
-        final = os.path.join(self.destDirectory, "final.jpg")
+    def do_combine_landscape_process(self, dest_file_name="final.jpg"):
+        final = os.path.join(self.destDirectory, dest_file_name)
 
         chosen_images, image_aspect = self.find_images_to_combine()
         self.substitute_data(chosen_images)
@@ -146,6 +151,17 @@ class CombineImages:
         stat_file_path = os.path.join(self.destDirectory, "tempStat.txt")
         self.write_image_statistics(stat_file_path)
         return final
+
+    def iterate_combine_landscape(self):
+        iterate = 0
+        print("start")
+        print(len(self.allImageObjects))
+        while len(self.allImageObjects) > 0:
+            print("before")
+            b = self.do_combine_landscape_process(dest_file_name="final" + str(iterate) + ".jpg")
+            print(b)
+            iterate += 1
+            print(iterate)
 
 
 if __name__ == "__main__":

@@ -103,6 +103,7 @@ class RedditAPI:
 
     @staticmethod
     def should_run_weekly():
+        return True
         file_path = os.path.join(base_directory, "PictureSource", "lastran.txt")
         if os.path.exists(file_path):
             # check file to see last time it was run
@@ -116,20 +117,22 @@ class RedditAPI:
         else:
             return True
 
-    def set_weekly_run_file(self, destDirectory):
-        file_path = os.path.join(destDirectory,"lastran.txt")
+    def set_weekly_run_file(self):
+        file_path = os.path.join(base_directory, "PictureSource", "lastran.txt")
         with open(file_path, "w") as f:
             time_str = datetime.datetime.now().strftime("%Y-%m-%d")
             f.write(time_str)
 
     def do_weekly_iteration(self):
         if RedditAPI.should_run_weekly():
-            dest_directory = os.path.join(base_directory, "PictureSource", "LockScreen")
-            source_directory = os.path.join(base_directory, "PictureSource")
-            remove_all_files(dest_directory)
+            initialSource = os.path.join(base_directory, "PictureSource", "LockScreenSource")
+            finalSource = os.path.join(base_directory, "PictureSource", "LockScreen")
+            remove_all_files(initialSource)
             weekly_urls = self.get_submissions_for_subreddit("week")
             totalCount = len(weekly_urls)
             progressBar = None
+            landscape = []
+            portrait = []
             if self.args.show_progress:
                 progressBar = Bar("Downloading Weekly Images", max=totalCount, suffix='%(index)d / %(max)d  %(percent)d%%')
                 progressBar.start()
@@ -142,7 +145,12 @@ class RedditAPI:
 
                     # get image and save if able
                     imageObj = RedditImage(image_url, post_permalink)
-                    imageObj.get_image_from_url(dest_directory)
+                    imageObj.get_image_from_url(initialSource)
+                    print(len(weekly_urls))
+                    if imageObj.image_is_landscape():
+                        landscape.append(imageObj)
+                    else:
+                        portrait.append(imageObj)
                     if imageObj.image_downloaded():
                         f.write(str(imageObj) + "\n")
 
@@ -152,4 +160,9 @@ class RedditAPI:
                 if progressBar is not None:
                     progressBar.finish()
 
-            self.set_weekly_run_file(source_directory)
+                # iterate through creating landscape photos
+                ci = CombineImages(portrait, finalSource)
+                ci.iterate_combine_landscape()
+
+
+            self.set_weekly_run_file()
