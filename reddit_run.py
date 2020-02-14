@@ -27,7 +27,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     apiObject = RedditAPI(args)
-    #apiObject.do_daily_iteration()
+    apiObject.do_daily_iteration()
     if not args.no_weekly:
         apiObject.do_weekly_iteration()
 
