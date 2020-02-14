@@ -27,6 +27,9 @@ it will popup with the applications secret.
 for your reddit project.
 8. Will need to update your CLIENT_ID field in your .env file. This value can be found just under your
 Reddit API application Name on their website. (an example of what it will look like value wise is already in example.env)
+9. If you want to setup your own config options copy the example_config.ini file as a base and then make 
+your changes there and then change the REDD_CONFIG_PATH variable in your .env file to match the new file name(path can be relative to the repository or absolute)
+
 
 # Running the Program
 The program is executed by way of running the following command in terminal 

@@ -40,7 +40,9 @@ def print_list(l):
 
 
 def readConfigFile():
-    config_file_path = os.path.join(base_directory, "config.ini")
+    config_file_path = os.environ.get("REDD_CONFIG_PATH")
+    if config_file_path is None or not os.path.exists(config_file_path):
+        config_file_path = os.path.join(base_directory, "example_config.ini")
     config = configparser.ConfigParser()
     config.read(config_file_path)
     return config
