@@ -5,6 +5,7 @@ from reddit_image import RedditImage
 from combine_image import CombineImages
 import datetime
 from progress.bar import Bar
+from reddit_logging import log
 
 dest_directory = os.path.join(base_directory, "PictureSource")
 
@@ -52,11 +53,13 @@ class RedditAPI:
         return image_urls
 
     def do_daily_iteration(self):
+        log("Start Daily Iteration", is_heading=True)
         self.incorrect_aspect = []
         self.correct_aspect = []
         progressBar = None
         try:
             urls = self.get_submissions_for_subreddit("day")
+            log("URLS Gathered")
 
             totalCount = len(urls)
             if self.args.show_progress:
@@ -67,6 +70,7 @@ class RedditAPI:
                 # select specific url at random
                 attempt, urls = get_random_url(urls)
                 image_url, post_permalink = attempt
+                log("Process URL:", image_url, "URLS Left:", len(urls))
 
                 # save first attempt at okay file url
                 imageObj = RedditImage(image_url, post_permalink)
@@ -80,14 +84,18 @@ class RedditAPI:
                     self.incorrect_aspect.append(imageObj)
                 if progressBar is not None:
                     progressBar.next()
+                log("URL has been processed")
 
             if progressBar is not None:
                 progressBar.finish()
                 progressBar = None
 
             if len(self.incorrect_aspect) > 0:
+                log("Start Image Combining Process")
                 ci = CombineImages(self.incorrect_aspect, dest_directory)
+                log("Save Resulting Image")
                 pathOfResult = ci.do_combine_landscape_process()
+                log("Set Image as Desktop Background")
                 RedditImage.set_image_to_desktop_background(pathOfResult)
             else:
                 self.correct_aspect[0].set_to_desktop_background()
@@ -124,11 +132,13 @@ class RedditAPI:
 
     def do_weekly_iteration(self):
         if RedditAPI.should_run_weekly():
+            log("Start Weekly Iteration", is_heading=True)
             initialSource = os.path.join(base_directory, "PictureSource", "LockScreenSource")
             finalSource = os.path.join(base_directory, "PictureSource", "LockScreen")
             remove_all_files(initialSource)
             remove_all_files(finalSource)
             weekly_urls = self.get_submissions_for_subreddit("week")
+            log("URLS Gathered")
             totalCount = len(weekly_urls)
             progressBar = None
             landscape = []
@@ -143,10 +153,11 @@ class RedditAPI:
                     attempt, urls = get_random_url(weekly_urls)
                     image_url, post_permalink = attempt
 
+                    log("Process URL:", image_url, "URLS Left:", len(urls))
+
                     # get image and save if able
                     imageObj = RedditImage(image_url, post_permalink)
                     imageObj.get_image_from_url(initialSource)
-                    print(len(weekly_urls))
                     if imageObj.image_is_landscape():
                         landscape.append(imageObj)
                     else:
@@ -156,6 +167,8 @@ class RedditAPI:
 
                     if progressBar is not None:
                         progressBar.next()
+
+                    log("URL has been processed")
 
                 if progressBar is not None:
                     progressBar.finish()

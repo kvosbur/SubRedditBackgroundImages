@@ -4,6 +4,7 @@ from util import base_directory, init_directories
 from reddit_api import RedditAPI
 import argparse
 import signal
+import reddit_logging
 
 env_file_path = os.path.join(base_directory, ".env")
 load_dotenv(env_file_path)
@@ -12,6 +13,7 @@ apiObject = None
 parser = argparse.ArgumentParser(description="Run EDI")
 parser.add_argument("--show-progress", action="store_true", help="Show Progress Bars for Downloads")
 parser.add_argument("--no-weekly", default=False, action="store_true", help="Disables the program from trying to run the weekly lockscreen photos portion")
+parser.add_argument("--verbose", default=False, action="store_true", help="Show output for every action")
 
 def sigterm_handler(signalNum, frame):
     print("\nCleaning Up Files Before Termination\n")
@@ -25,6 +27,9 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, sigterm_handler)
 
     args = parser.parse_args()
+
+    reddit_logging.LoggingEnabled = args.verbose
+    print(args.verbose)
 
     apiObject = RedditAPI(args)
     apiObject.do_daily_iteration()

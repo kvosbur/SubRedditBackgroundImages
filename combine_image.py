@@ -127,7 +127,7 @@ class CombineImages:
         beg_x = 0
         nextColor = None
         for pic in self.selectedImages:
-            portrait = Image.open(pic.imagePath)
+            portrait = Image.open(pic.imagePath).convert('RGB')
             if nextColor is not None:
                 # make gradient for in between images
                 currColor = average_pixel_color(portrait, LEFT)

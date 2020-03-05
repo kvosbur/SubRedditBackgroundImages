@@ -3,6 +3,7 @@ import ctypes
 from PIL import ImageDraw
 import configparser
 import random
+from reddit_logging import log
 
 base_directory = os.path.dirname(os.path.abspath(__file__))
 
@@ -18,10 +19,12 @@ def init_directories():
 
 
 def remove_all_files(directory):
+    log("Removing all files in directory:", directory, is_heading=True)
     prev = os.listdir(directory)
     for f in prev:
         full = os.path.join(directory, f)
         os.remove(full)
+        log("File Removed:", full)
 
 
 def get_random_url(url_list):
@@ -69,7 +72,7 @@ def average_pixel_color(image_object, side):
     if side == RIGHT:
         w = width - 1
     for h in range(height):
-        pixel= image_object.getpixel((w, h))
+        pixel = image_object.getpixel((w, h))
         if len(pixel) == 3:
             nextR, nextG, nextB = pixel
         # ignore alpha if it is given
