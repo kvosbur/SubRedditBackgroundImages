@@ -3,6 +3,7 @@ from PIL import Image
 from util import base_directory, get_screen_aspect_ratio, average_pixel_color, do_gradient, print_list
 from util import RIGHT, LEFT, readConfigFile
 from reddit_image import RedditImage
+from reddit_logging import log
 
 urls = ['https://i.redd.it/d3rcv2shyid41.png',
         'https://i.redd.it/50bw2q84bgd41.jpg',
@@ -123,7 +124,7 @@ class CombineImages:
 
         temp = Image.new("RGB", (image_width, image_height))
 
-        print("Start Image Combining Process")
+        log("Start Image Combining Process")
         beg_x = 0
         nextColor = None
         for pic in self.selectedImages:
@@ -137,9 +138,9 @@ class CombineImages:
             temp.paste(portrait, (beg_x, height_factor))
             beg_x += RedditImage.get_size_data(pic, RedditImage.WIDTH) + width_diff
 
-        print("Save Resulting Image")
+        log("Save Resulting Image")
         temp.save(final_image_path, format="JPEG")
-        print("Combined Image Saved")
+        log("Combined Image Saved")
 
     def write_image_statistics(self, file_path):
         with open(file_path, "w") as f:

@@ -4,6 +4,7 @@ from PIL import Image
 import shutil
 import os
 import ctypes
+from reddit_logging import log
 
 
 class RedditImage:
@@ -63,7 +64,11 @@ class RedditImage:
             return
 
         response = requests.get(self.imageUrl)
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError:
+            log("There was an exception thrown while getting url HTTP Status:", response.status_code)
+            return
 
         content = response.content
 
