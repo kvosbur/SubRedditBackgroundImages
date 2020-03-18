@@ -21,6 +21,7 @@ class RedditImage:
         self.imageHeight = 0
         self.ext = ""
         self.destDirectory = ""
+        self.imageId = None
 
     def __str__(self):
         return "URL: " + self.imageUrl + "  FilePath:" + self.imagePath + "  Height:" + str(self.imageHeight)

@@ -1,6 +1,7 @@
 import datetime
 LoggingFile = ""
-LoggingEnabled = False
+VerboseLogging = False
+FileLogging = True
 
 
 def log_to_file(logString):
@@ -9,16 +10,18 @@ def log_to_file(logString):
 
 
 def log(*args, is_heading=False):
-    if LoggingEnabled:
-        output_str = [str(datetime.datetime.now().strftime("")) + ": "]
-        if is_heading:
-            output_str.append("### ")
-        for arg in args:
-            output_str.append(str(arg) + " ")
-        if is_heading:
-            output_str.append("###")
-        output_str.append("\n")
-        output = "".join(output_str)
+    output_str = [str(datetime.datetime.now().strftime("")) + ": "]
+    if is_heading:
+        output_str.append("### ")
+    for arg in args:
+        output_str.append(str(arg) + " ")
+    if is_heading:
+        output_str.append("###")
+    output_str.append("\n")
+    output = "".join(output_str)
+
+    if VerboseLogging:
         print(output, end="")
+    if FileLogging:
         log_to_file(output)
 

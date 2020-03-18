@@ -16,6 +16,7 @@ parser.add_argument("--show-progress", action="store_true", help="Show Progress 
 parser.add_argument("--no-weekly", default=False, action="store_true", help="Disables the program from trying to run the weekly lockscreen photos portion")
 parser.add_argument("--verbose", default=False, action="store_true", help="Show output for every action")
 parser.add_argument("--log-file", help="File to store logging into")
+parser.add_argument("--no-log-file", defaut=False, action="store_true", help="Don't log program into log file")
 
 def sigterm_handler(signalNum, frame):
     print("\nCleaning Up Files Before Termination\n")
@@ -30,12 +31,14 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    reddit_logging.LoggingEnabled = args.verbose
+    reddit_logging.VerboseLogging = args.verbose
 
     if args.log_file is None or not os.path.exists(args.log_file):
         reddit_logging.LoggingFile = os.path.join(base_directory, "PictureSource", "log.txt")
     else:
         reddit_logging.LoggingFile = args.log_file
+
+    reddit_logging.FileLogging = not args.no_log_file
 
     reddit_logging.log("Begin Program")
     try:

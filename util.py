@@ -4,8 +4,10 @@ from PIL import ImageDraw
 import configparser
 import random
 from reddit_logging import log
+import datetime
 
 base_directory = os.path.dirname(os.path.abspath(__file__))
+DateFormat = "%m/%d/%Y %H:%M:%S"
 
 
 def init_directories():
@@ -98,5 +100,13 @@ def do_gradient(image_obj, upperLeft, lowerRight, leftColor, rightColor):
         colorG = round(leftColor[1] - (percent_dist * diff_g))
         colorB = round(leftColor[2] - (percent_dist * diff_b))
         drawer.line((x, upperLeft[1], x, lowerRight[1]), fill=(colorR, colorG, colorB))
+
+
+def current_date_string():
+    return datetime.datetime.now().strftime(DateFormat)
+
+
+def parse_date_string(date_string):
+    datetime.datetime.strptime(date_string, DateFormat)
 
 
