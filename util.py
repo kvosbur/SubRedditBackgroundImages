@@ -3,8 +3,11 @@ import ctypes
 from PIL import ImageDraw
 import configparser
 import random
+from reddit_logging import log
+import datetime
 
 base_directory = os.path.dirname(os.path.abspath(__file__))
+DateFormat = "%m/%d/%Y %H:%M:%S"
 
 
 def init_directories():
@@ -18,10 +21,12 @@ def init_directories():
 
 
 def remove_all_files(directory):
+    log("Removing all files in directory:", directory, is_heading=True)
     prev = os.listdir(directory)
     for f in prev:
         full = os.path.join(directory, f)
         os.remove(full)
+        log("File Removed:", full)
 
 
 def get_random_url(url_list):
@@ -71,7 +76,7 @@ def average_pixel_color(image_object, side):
     if side == RIGHT:
         w = width - 1
     for h in range(height):
-        pixel= image_object.getpixel((w, h))
+        pixel = image_object.getpixel((w, h))
         if len(pixel) == 3:
             nextR, nextG, nextB = pixel
         # ignore alpha if it is given
@@ -97,5 +102,13 @@ def do_gradient(image_obj, upperLeft, lowerRight, leftColor, rightColor):
         colorG = round(leftColor[1] - (percent_dist * diff_g))
         colorB = round(leftColor[2] - (percent_dist * diff_b))
         drawer.line((x, upperLeft[1], x, lowerRight[1]), fill=(colorR, colorG, colorB))
+
+
+def current_date_string():
+    return datetime.datetime.now().strftime(DateFormat)
+
+
+def parse_date_string(date_string):
+    datetime.datetime.strptime(date_string, DateFormat)
 
 

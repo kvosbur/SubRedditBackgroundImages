@@ -4,6 +4,8 @@ from PIL import Image
 import shutil
 import os
 import ctypes
+from urllib.parse import quote
+from reddit_logging import log
 
 
 class RedditImage:
@@ -20,6 +22,7 @@ class RedditImage:
         self.imageHeight = 0
         self.ext = ""
         self.destDirectory = ""
+        self.imageId = None
 
     def __str__(self):
         return "URL: " + self.imageUrl + "  FilePath:" + self.imagePath + "  Height:" + str(self.imageHeight)
@@ -30,6 +33,12 @@ class RedditImage:
             return imageObject.imageWidth
         elif size_type == RedditImage.HEIGHT:
             return imageObject.imageHeight
+
+    def safe_submissionUrl(self):
+        return quote(self.submissionUrl)
+
+    def safe_imageUrl(self):
+        return quote(self.imageUrl)
 
     def get_image_path(self):
         if self.imagePath == "":
@@ -63,7 +72,11 @@ class RedditImage:
             return
 
         response = requests.get(self.imageUrl)
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError:
+            log("There was an exception thrown while getting url HTTP Status:", response.status_code)
+            return
 
         content = response.content
 

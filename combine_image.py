@@ -3,6 +3,8 @@ from PIL import Image
 from util import base_directory, get_screen_aspect_ratio, average_pixel_color, do_gradient, print_list
 from util import RIGHT, LEFT, readConfigFile
 from reddit_image import RedditImage
+from reddit_logging import log
+from typing import List
 
 urls = ['https://i.redd.it/d3rcv2shyid41.png',
         'https://i.redd.it/50bw2q84bgd41.jpg',
@@ -19,6 +21,7 @@ class CombineImages:
         general = config["GENERAL"]
         self.allowedAspectDiff = general.getfloat("ALLOWED_ASPECT_DIFF")
         self.selectedImages = []
+        self.combineId = None
 
     @staticmethod
     def get_good_aspect(image_objects, width, maxHeight, startIndex):
@@ -123,11 +126,11 @@ class CombineImages:
 
         temp = Image.new("RGB", (image_width, image_height))
 
-        print("Start Image Combining Process")
+        log("Start Image Combining Process")
         beg_x = 0
         nextColor = None
         for pic in self.selectedImages:
-            portrait = Image.open(pic.imagePath)
+            portrait = Image.open(pic.imagePath).convert('RGB')
             if nextColor is not None:
                 # make gradient for in between images
                 currColor = average_pixel_color(portrait, LEFT)
@@ -137,14 +140,14 @@ class CombineImages:
             temp.paste(portrait, (beg_x, height_factor))
             beg_x += RedditImage.get_size_data(pic, RedditImage.WIDTH) + width_diff
 
-        print("Save Resulting Image")
+        log("Save Resulting Image")
         temp.save(final_image_path, format="JPEG")
-        print("Combined Image Saved")
+        log("Combined Image Saved")
 
     def write_image_statistics(self, file_path):
         with open(file_path, "w") as f:
             for pic in self.selectedImages:
-                f.write(pic.submissionUrl + "\n")
+                f.write(pic.safe_submissionUrl() + "\n")
 
     def do_combine_landscape_process(self, dest_file_name="final.jpg"):
         final = os.path.join(self.destDirectory, dest_file_name)
@@ -164,16 +167,27 @@ class CombineImages:
         self.write_image_statistics(stat_file_path)
         return final
 
-    def iterate_combine_landscape(self):
+    def get_selected_images(self):
+        return self.selectedImages
+
+    @staticmethod
+    def iterate_combine_landscape(all_image_objects: List[RedditImage], dest_directory: str):
         iterate = 0
         print("start Combining")
-        while len(self.allImageObjects) > 0:
-            b = self.do_combine_landscape_process(dest_file_name="final" + str(iterate) + ".jpg")
+        end_objects = []
+        while len(all_image_objects) > 0:
+            ci = CombineImages(all_image_objects, dest_directory)
+            b = ci.do_combine_landscape_process(dest_file_name="final" + str(iterate) + ".jpg")
             if b == "":
                 # this means that there isn't a good match now, which means that no
                 break
+            else:
+                end_objects.append(ci)
+                all_image_objects = ci.allImageObjects
             print(b)
             iterate += 1
+
+        return end_objects
 
 
 if __name__ == "__main__":
