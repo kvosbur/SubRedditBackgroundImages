@@ -10,7 +10,7 @@ def log_to_file(logString):
 
 
 def log(*args, is_heading=False):
-    output_str = [str(datetime.datetime.now().strftime("")) + ": "]
+    output_str = [str(datetime.datetime.now().strftime("%Y-%m-%d")) + ": "]
     if is_heading:
         output_str.append("### ")
     for arg in args:
