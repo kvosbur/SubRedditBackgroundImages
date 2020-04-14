@@ -147,7 +147,7 @@ class CombineImages:
     def write_image_statistics(self, file_path):
         with open(file_path, "w") as f:
             for pic in self.selectedImages:
-                f.write(pic.submissionUrl + "\n")
+                f.write(pic.safe_submissionUrl() + "\n")
 
     def do_combine_landscape_process(self, dest_file_name="final.jpg"):
         final = os.path.join(self.destDirectory, dest_file_name)
@@ -183,8 +183,11 @@ class CombineImages:
                 break
             else:
                 end_objects.append(ci)
+                all_image_objects = ci.allImageObjects
             print(b)
             iterate += 1
+
+        return end_objects
 
 
 if __name__ == "__main__":

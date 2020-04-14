@@ -4,6 +4,7 @@ from PIL import Image
 import shutil
 import os
 import ctypes
+from urllib.parse import quote
 from reddit_logging import log
 
 
@@ -32,6 +33,12 @@ class RedditImage:
             return imageObject.imageWidth
         elif size_type == RedditImage.HEIGHT:
             return imageObject.imageHeight
+
+    def safe_submissionUrl(self):
+        return quote(self.submissionUrl)
+
+    def safe_imageUrl(self):
+        return quote(self.imageUrl)
 
     def get_image_path(self):
         if self.imagePath == "":
