@@ -27,6 +27,30 @@ class RedditImage:
     def __str__(self):
         return "URL: " + self.imageUrl + "  FilePath:" + self.imagePath + "  Height:" + str(self.imageHeight)
 
+    @property
+    def imageHeight(self):
+        if self._imageHeight == 0:
+            image = Image.open(self.imagePath)
+            self.imageWidth, self._imageHeight = image.size
+        return self._imageHeight
+
+    @imageHeight.setter
+    def imageHeight(self, val):
+        self._imageHeight = val
+
+    @property
+    def imageWidth(self):
+        if self._imageWidth == 0:
+            image = Image.open(self.imagePath)
+            self._imageWidth, self.imageHeight = image.size
+        return self._imageWidth
+
+    @imageHeight.setter
+    def imageWidth(self, val):
+        self._imageWidth = val
+
+
+
     @staticmethod
     def get_size_data(imageObject, size_type):
         if size_type == RedditImage.WIDTH:
@@ -52,9 +76,6 @@ class RedditImage:
         # user32 = ctypes.windll.user32
         # screensize = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
 
-        if self.imageHeight == 0 or self.imageWidth == 0:
-            image = Image.open(self.imagePath)
-            self.imageWidth, self.imageHeight = image.size
         if self.imageWidth > self.imageHeight:
             return True
         else:
