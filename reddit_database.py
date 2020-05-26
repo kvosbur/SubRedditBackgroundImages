@@ -5,8 +5,14 @@ import datetime
 from typing import List
 from reddit_image import RedditImage
 from combine_image import CombineImages
-DBFileName = "image_db.db"
+from Model import Base, combined
+from sqlalchemy import create_engine
+from sqlalchemy.sql.expression import func
+from sqlalchemy.orm import sessionmaker
 
+DBFilePath = os.path.join(base_directory, "PictureSource", os.environ["DBFileName"])
+engine = create_engine('sqlite:///' + DBFilePath)
+Base.metadata.create_all(engine)
 
 class RedditDatabase:
     # static variables
@@ -15,107 +21,43 @@ class RedditDatabase:
     # object variables
     connection = None
 
-    @staticmethod
-    def get_object():
-        if RedditDatabase.Singleton is None:
-            RedditDatabase.Singleton = RedditDatabase()
-
-        return RedditDatabase.Singleton
-
     def __init__(self):
-        self.get_connection()
+        Session = sessionmaker(bind=engine)
+        self.session = Session()
 
-    def do_init(self):
-        self.connection.execute('''
-            CREATE TABLE images(
-                imageId INTEGER PRIMARY KEY,
-                imageURL TEXT,
-                postURL TEXT,
-                imagePath TEXT,
-                dateReceived TEXT,
-                blackListedDate Text
-            );
-        ''')
-        self.connection.execute('''
-            CREATE TABLE combined(
-                combineId INTEGER,
-                imageId INTEGER,
-                position INTEGER,
-                PRIMARY KEY (combineId, imageId),
-                FOREIGN KEY(imageId) REFERENCES images(imageId) ON DELETE CASCADE
-            );
-        ''')
-        self.connection.execute('''
-            CREATE TABLE weekly(
-                weeklyId INTEGER PRIMARY KEY,
-                imageId INTEGER,
-                combineId INTEGER,
-                isCurrent INTEGER,
-                FOREIGN KEY(imageId) REFERENCES images(imageId) ON DELETE CASCADE,
-                FOREIGN KEY(combineId) REFERENCES combine(combineId) ON DELETE CASCADE
-            );
-        ''')
-        self.connection.execute('''
-            CREATE TABLE daily(
-                dailyId INTEGER PRIMARY KEY,
-                imageId INTEGER,
-                combineId INTEGER,
-                isCurrent INTEGER,
-                FOREIGN KEY(imageId) REFERENCES images(imageId) ON DELETE CASCADE,
-                FOREIGN KEY(combineId) REFERENCES combine(combineId) ON DELETE CASCADE
-            );
-        ''')
-
-    def get_connection(self):
-        db_path = os.path.join(base_directory, "PictureSource", DBFileName)
-        do_init = not os.path.exists(db_path)
-        # if db doesn't exist connect will create the necessary file
-        self.connection = sqlite3.connect(db_path)
-        # enable foreign keys for this database connection
-        self.connection.execute('''PRAGMA foreign_keys = ON;''')
-        if do_init:
-            self.do_init()
-
-    def get_next_primary(self, table_name):
-        tables = {"images": "imageId", "combined": "combineId", "weekly": "weeklyID", "daily": "dailyId"}
-        res = self.connection.execute("Select max(" + tables[table_name] + ") from " + table_name + ";")
-        amount = res.fetchone()[0]
-        # case to catch if table is empty
-        if amount is None:
-            amount = 0
-        return amount + 1
+    def get_next_combineid(self):
+        res = self.session.query(func.max(combined.Combined.combineId)).one()
+        if res[0] is None:
+            return 1
+        else:
+            return None
 
     def insert_all_combined(self, all_combined_object: List[CombineImages]):
         [self.insert_combined(x) for x in all_combined_object]
 
     def insert_combined(self, combined_object: CombineImages):
-        newId = self.get_next_primary("combined")
         images = combined_object.get_selected_images()
-        for image_index in range(len(images)):
-            sub_image = images[image_index]
-            if sub_image.imageId is None:
-                self.insert_image(sub_image)
-            self.connection.execute('''
-                INSERT INTO combined (combineId, imageId, position) VALUES (?,?,?)
-            ''', [newId, sub_image.imageId, image_index + 1])
+        combine_id = self.get_next_combineid()
+        objects = []
+        for index, image in enumerate(images):
+            self.insert_image(image)
+            obj = combined.Combined(combine_id, image.imageObj.imageId, index)
+            objects.append(obj)
+            self.session.add(obj)
 
-        combined_object.combineId = newId
+        self.session.commit()
+        combined_object.combineId = combine_id
 
     def insert_images(self, image_objects: List[RedditImage]):
         [self.insert_image(x) for x in image_objects]
 
     def insert_image(self, image_object: RedditImage):
-        if image_object.imageId is not None:
-            return image_object.imageId
-        newId = self.get_next_primary("images")
-        argument_list = [newId, image_object.imageUrl, image_object.submissionUrl, image_object.get_image_path(),
-                         current_date_string(), ""]
-        self.connection.execute(''' 
-            INSERT INTO images (imageId, imageURL, postURL, imagePath, dateReceived, blackListedDate) Values(?,?,?,?,?,?);
-        ''', argument_list)
-        self.connection.commit()
-        image_object.imageId = newId
-        return newId
+        if image_object.imageObj is not None:
+            return image_object.imageObj.imageId
+        image_object.create_image_model()
+        self.session.add(image_object.imageObj)
+        self.session.commit()
+        return image_object.imageObj.imageId
 
 
 

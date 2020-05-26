@@ -91,13 +91,13 @@ class RedditAPI:
                 progressBar.finish()
                 progressBar = None
 
-            RedditDatabase.get_object().insert_images(self.correct_aspect + self.incorrect_aspect)
+            RedditDatabase().insert_images(self.correct_aspect + self.incorrect_aspect)
             if len(self.incorrect_aspect) > 0:
                 log("Start Image Combining Process")
                 ci = CombineImages(self.incorrect_aspect, dest_directory)
                 log("Save Resulting Image")
                 pathOfResult = ci.do_combine_landscape_process()
-                RedditDatabase.get_object().insert_combined(ci)
+                RedditDatabase().insert_combined(ci)
                 log("Set Image as Desktop Background")
                 RedditImage.set_image_to_desktop_background(pathOfResult)
             else:
@@ -180,10 +180,10 @@ class RedditAPI:
                     imageObj.move_to_folder(finalSource)
                     print("did the copy")
 
-                RedditDatabase.get_object().insert_images(landscape + portrait)
+                RedditDatabase().insert_images(landscape + portrait)
 
                 # iterate through creating landscape photos
                 resulting = CombineImages.iterate_combine_landscape(portrait, finalSource)
-                RedditDatabase.get_object().insert_all_combined(resulting)
+                RedditDatabase().insert_all_combined(resulting)
 
             self.set_weekly_run_file()

@@ -6,6 +6,8 @@ import os
 import ctypes
 from urllib.parse import quote
 from reddit_logging import log
+from Model.images import Images
+import datetime
 
 
 class RedditImage:
@@ -18,20 +20,20 @@ class RedditImage:
         self.imageUrl = imageUrl
         self.submissionUrl = submissionUrl
         self.imagePath = ""
-        self.imageWidth = 0
-        self.imageHeight = 0
+        self._imageWidth = 0
+        self._imageHeight = 0
         self.ext = ""
         self.destDirectory = ""
-        self.imageId = None
+        self.imageObj = None
 
     def __str__(self):
         return "URL: " + self.imageUrl + "  FilePath:" + self.imagePath + "  Height:" + str(self.imageHeight)
 
     @property
     def imageHeight(self):
-        if self._imageHeight == 0:
+        if self._imageHeight == 0 and self.imagePath != "":
             image = Image.open(self.imagePath)
-            self.imageWidth, self._imageHeight = image.size
+            self.imageWidth, self.imageHeight = image.size
         return self._imageHeight
 
     @imageHeight.setter
@@ -40,16 +42,14 @@ class RedditImage:
 
     @property
     def imageWidth(self):
-        if self._imageWidth == 0:
+        if self._imageWidth == 0 and self.imagePath != "":
             image = Image.open(self.imagePath)
-            self._imageWidth, self.imageHeight = image.size
+            self.imageWidth, self.imageHeight = image.size
         return self._imageWidth
 
-    @imageHeight.setter
+    @imageWidth.setter
     def imageWidth(self, val):
         self._imageWidth = val
-
-
 
     @staticmethod
     def get_size_data(imageObject, size_type):
@@ -57,6 +57,9 @@ class RedditImage:
             return imageObject.imageWidth
         elif size_type == RedditImage.HEIGHT:
             return imageObject.imageHeight
+
+    def create_image_model(self):
+        self.imageObj = Images(self.submissionUrl, self.imagePath, datetime.datetime.now(), None)
 
     def safe_submissionUrl(self):
         return quote(self.submissionUrl)

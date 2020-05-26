@@ -1,14 +1,15 @@
 import os
 from dotenv import load_dotenv
 from util import base_directory, init_directories
+env_file_path = os.path.join(base_directory, ".env")
+load_dotenv(env_file_path)
+
 from reddit_api import RedditAPI
 import argparse
 import signal
 import reddit_logging
 import traceback
 
-env_file_path = os.path.join(base_directory, ".env")
-load_dotenv(env_file_path)
 apiObject = None
 
 parser = argparse.ArgumentParser(description="Run EDI")
