@@ -57,6 +57,8 @@ class RedditAPI:
         log("Start Daily Iteration", is_heading=True)
         self.incorrect_aspect = []
         self.correct_aspect = []
+        dailyDirectory = os.path.join(dest_directory, "DailySource")
+        remove_all_files(dailyDirectory)
         progressBar = None
         try:
             urls = self.get_submissions_for_subreddit("day")
@@ -75,7 +77,7 @@ class RedditAPI:
 
                 # save first attempt at okay file url
                 imageObj = RedditImage(image_url, post_permalink)
-                imageObj.get_image_from_url(dest_directory)
+                imageObj.get_image_from_url(dailyDirectory)
                 if not imageObj.image_downloaded():
                     continue
 
@@ -102,15 +104,10 @@ class RedditAPI:
                 RedditImage.set_image_to_desktop_background(pathOfResult)
             else:
                 self.correct_aspect[0].set_to_desktop_background()
-        except KeyboardInterrupt:
-            None
         finally:
             # cleanup all images that had been temporarily downloaded
             if progressBar is not None:
                 progressBar.finish()
-            print("\nCleaning Up Files Before Termination\n")
-            self.do_cleanup()
-
 
     @staticmethod
     def should_run_weekly():
@@ -140,50 +137,54 @@ class RedditAPI:
             finalSource = os.path.join(base_directory, "PictureSource", "LockScreen")
             remove_all_files(initialSource)
             remove_all_files(finalSource)
-            weekly_urls = self.get_submissions_for_subreddit("week")
-            log("URLS Gathered")
-            totalCount = len(weekly_urls)
             progressBar = None
-            landscape = []
-            portrait = []
-            if self.args.show_progress:
-                progressBar = Bar("Downloading Weekly Images", max=totalCount, suffix='%(index)d / %(max)d  %(percent)d%%')
-                progressBar.start()
+            try:
+                weekly_urls = self.get_submissions_for_subreddit("week")
+                log("URLS Gathered")
+                totalCount = len(weekly_urls)
+                landscape = []
+                portrait = []
+                if self.args.show_progress:
+                    progressBar = Bar("Downloading Weekly Images", max=totalCount, suffix='%(index)d / %(max)d  %(percent)d%%')
+                    progressBar.start()
 
-            with open(os.path.join(base_directory, "PictureSource", "lockScreenStat.txt"), "w") as f:
-                while len(weekly_urls) > 0:
-                    # select specific url at random
-                    attempt, urls = get_random_url(weekly_urls)
-                    image_url, post_permalink = attempt
+                with open(os.path.join(base_directory, "PictureSource", "lockScreenStat.txt"), "w") as f:
+                    while len(weekly_urls) > 0:
+                        # select specific url at random
+                        attempt, urls = get_random_url(weekly_urls)
+                        image_url, post_permalink = attempt
 
-                    log("Process URL:", image_url, "URLS Left:", len(urls))
+                        log("Process URL:", image_url, "URLS Left:", len(urls))
 
-                    # get image and save if able
-                    imageObj = RedditImage(image_url, post_permalink)
-                    imageObj.get_image_from_url(initialSource)
-                    if imageObj.image_is_landscape():
-                        landscape.append(imageObj)
-                    else:
-                        portrait.append(imageObj)
-                    if imageObj.image_downloaded():
-                        f.write(str(imageObj) + "\n")
+                        # get image and save if able
+                        imageObj = RedditImage(image_url, post_permalink)
+                        imageObj.get_image_from_url(initialSource)
+                        if imageObj.image_is_landscape():
+                            landscape.append(imageObj)
+                        else:
+                            portrait.append(imageObj)
+                        if imageObj.image_downloaded():
+                            f.write(str(imageObj) + "\n")
+
+                        if progressBar is not None:
+                            progressBar.next()
+
+                        log("URL has been processed")
 
                     if progressBar is not None:
-                        progressBar.next()
+                        progressBar.finish()
 
-                    log("URL has been processed")
+                    for imageObj in landscape:
+                        imageObj.move_to_folder(finalSource)
+                        print("did the copy")
 
+                    RedditDatabase().insert_images(landscape + portrait)
+
+                    # iterate through creating landscape photos
+                    resulting = CombineImages.iterate_combine_landscape(portrait, finalSource)
+                    RedditDatabase().insert_all_combined(resulting)
+                self.set_weekly_run_file()
+            finally:
                 if progressBar is not None:
                     progressBar.finish()
 
-                for imageObj in landscape:
-                    imageObj.move_to_folder(finalSource)
-                    print("did the copy")
-
-                RedditDatabase().insert_images(landscape + portrait)
-
-                # iterate through creating landscape photos
-                resulting = CombineImages.iterate_combine_landscape(portrait, finalSource)
-                RedditDatabase().insert_all_combined(resulting)
-
-            self.set_weekly_run_file()

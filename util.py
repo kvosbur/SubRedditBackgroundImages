@@ -19,6 +19,14 @@ def init_directories():
     if not os.path.exists(lockScreenDirectory):
         os.mkdir(lockScreenDirectory)
 
+    lockScreenSourceDirectory = os.path.join(pictureDirectory, "LockScreenSource")
+    if not os.path.exists(lockScreenSourceDirectory):
+        os.mkdir(lockScreenSourceDirectory)
+
+    dailyDirectory = os.path.join(pictureDirectory, "DailySource")
+    if not os.path.exists(dailyDirectory):
+        os.mkdir(dailyDirectory)
+
 
 def remove_all_files(directory):
     log("Removing all files in directory:", directory, is_heading=True)
