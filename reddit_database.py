@@ -24,13 +24,16 @@ class RedditDatabase:
     def __init__(self):
         Session = sessionmaker(bind=engine)
         self.session = Session()
+        self.session.execute("PRAGMA foreign_keys=ON;")
+        self.session.commit()
+
 
     def get_next_combineid(self):
         res = self.session.query(func.max(combined.Combined.combineId)).one()
         if res[0] is None:
             return 1
         else:
-            return None
+            return res[0] + 1
 
     def insert_all_combined(self, all_combined_object: List[CombineImages]):
         [self.insert_combined(x) for x in all_combined_object]
@@ -57,7 +60,6 @@ class RedditDatabase:
         image_object.create_image_model()
         self.session.add(image_object.imageObj)
         self.session.commit()
-        return image_object.imageObj.imageId
 
 
 

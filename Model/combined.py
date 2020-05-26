@@ -5,7 +5,7 @@ from sqlalchemy import Column, Integer, ForeignKey, Sequence
 class Combined(Base):
     __tablename__ = "combined"
 
-    combineId = Column(Integer, primary_key=True)
+    combineId = Column(Integer, primary_key=True, autoincrement=True)
     imageId = Column(Integer, ForeignKey("images.imageId", ondelete="CASCADE"), primary_key=True, nullable=False)
     position = Column(Integer, nullable=False)
 
