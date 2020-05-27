@@ -9,6 +9,7 @@ import argparse
 import signal
 import reddit_logging
 import traceback
+from reddit_cmd import RedditShell
 
 apiObject = None
 
@@ -18,6 +19,7 @@ parser.add_argument("--no-weekly", default=False, action="store_true", help="Dis
 parser.add_argument("--verbose", default=False, action="store_true", help="Show output for every action")
 parser.add_argument("--log-file", help="File to store logging into")
 parser.add_argument("--no-log-file", default=False, action="store_true", help="Don't log program into log file")
+parser.add_argument("--interactive", default=False, action="store_true", help="Enter into interactive mode")
 
 def sigterm_handler(signalNum, frame):
     print("\nCleaning Up Files Before Termination\n")
@@ -41,17 +43,21 @@ if __name__ == "__main__":
 
     reddit_logging.FileLogging = not args.no_log_file
 
-    reddit_logging.log("Begin Program")
-    try:
+    if args.interactive:
+        RedditShell().cmdloop()
+    else:
 
-        apiObject = RedditAPI(args)
-        apiObject.do_daily_iteration()
-        if not args.no_weekly:
-            apiObject.do_weekly_iteration()
-    except Exception:
-        reddit_logging.log(traceback.format_exc())
+        reddit_logging.log("Begin Program")
+        try:
 
-    reddit_logging.log("End Program")
+            apiObject = RedditAPI(args)
+            apiObject.do_daily_iteration()
+            if not args.no_weekly:
+                apiObject.do_weekly_iteration()
+        except Exception:
+            reddit_logging.log(traceback.format_exc())
+
+        reddit_logging.log("End Program")
 
 
 
